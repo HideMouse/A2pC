@@ -1,22 +1,22 @@
 #include "generation.hpp"
 #include "preprocessor.hpp"
+#include "arghandler.hpp"
 
 #include <fstream>
 #include <sstream>
 
 int main(int argc, char* argv[]) {
+    // 参数处理器
+    ArgHandler argHandler;
+    ArgHandleResult result = argHandler.handleArgs(argc, argv);
 
-    if (argc != 2) {
-        std::cerr << "错误的参数列表!!!\a\n";
-        return -1;
-    }
-
+    // 读取源代码
     std::string src_codes;
     {
         std::stringstream ss;
-        std::fstream input(argv[1], std::ios::in);
+        std::fstream input(result.srcFile, std::ios::in);
         if (!input.is_open()) {
-            std::cerr << "无法打开源代码文件!!!\a\n";
+            std::cerr << "无法打开源代码文件\a\n";
             return -1;
         }
 
@@ -40,11 +40,17 @@ int main(int argc, char* argv[]) {
     // 生成器
     Generator generator(program, info);
     {
-        std::fstream output("out.asm", std::ios::out);
+        std::fstream output(result.outputFile, std::ios::out);
+        if (!output.is_open()) {
+            std::cerr << "无法打开输出文件\a\n";
+            return -1;
+        }
         output << generator.generate();
     }
 
     // 编译指令
-    system("nasm -f bin out.asm -o out.bin");
+    std::stringstream command;
+    command << "nasm -f bin " << result.outputFile << " -o out.bin";
+    system(command.str().c_str());
     // system("gcc out.obj -o out.exe");
 }

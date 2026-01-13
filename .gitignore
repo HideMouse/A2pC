@@ -1,0 +1,16 @@
+# 编译产物
+*.exe
+*.bin
+*.asm
+
+# 文件夹
+.vscode/
+build/
+example/
+test/
+
+# A++源代码
+*.a2p
+
+# 编译脚本
+*.bat

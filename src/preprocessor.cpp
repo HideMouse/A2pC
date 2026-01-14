@@ -48,13 +48,13 @@ PreprocessingInfo Preprocessor::preprocess() {
                     case BITS: {
                         std::string bits = line.substr(0, line.find_first_of(" \0"));
                         if (!bitsTypeSet.contains(bits)) {
-                            std::cout << "于行: " << lineIndex << "处:\n未知的位宽大小或缺少该参数\"" << bits << "\".\n\a";
+                            std::cout << "line: " << lineIndex << "\n  未知的位宽大小或缺少该参数\"" << bits << "\".\n\a";
                             exit(-1);
                         }
                         info.bits = bits;
                         line.erase(0, bits.size());
                         if (line.find_last_not_of(" \0") != std::string::npos) {
-                            std::cout << "于行: " << lineIndex << "处:\n错误的参数数量, 应为1.\n\a";
+                            std::cout << "line: " << lineIndex << "\n  错误的参数数量, 应为1.\n\a";
                             exit(-1);
                         }
                         break;
@@ -73,7 +73,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                                 clearSpace(line);
                             }
                             else {
-                                std::cout << "于行: " << lineIndex << "处:\n未知的符号.\n\a";
+                                std::cout << "line: " << lineIndex << "\n  未知的符号.\n\a";
                                 exit(-1);
                             }
                         }
@@ -82,7 +82,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                 }
             }
             else {
-                std::cout << "于行: " << lineIndex << ", 列: 2处:\n未知的预处理指令\"" << firstArg << "\".\n\a";
+                std::cout << "line: " << lineIndex << "\n  未知的预处理指令\"" << firstArg << "\".\n\a";
                 exit(-1);
             }
             line.clear();

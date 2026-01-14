@@ -1,6 +1,5 @@
 #include "tokenization.hpp"
 
-
 bool isNumberChar(char c);
 bool isAvailableNumber(const std::string& num);
 
@@ -40,6 +39,7 @@ std::vector<Token> Tokenizer::tokenize() {
             }
 
             if (!isAvailableNumber(buffer)) {
+                std::cerr << "line: " << lineIndex << "\n  ";
                 std::cerr << buffer << "并不是数字!\a\n";
                 exit(-1);
             }
@@ -58,6 +58,7 @@ std::vector<Token> Tokenizer::tokenize() {
             continue;
         }
         else {
+            std::cerr << "line: " << lineIndex << "\n  ";
             std::cerr << "意外的标记!\a\n";
             exit(-1);
         }

@@ -21,8 +21,9 @@ class Generator {
         std::string generate() const;
 
     private:
-        inline std::string addrBrackToStr(AddressingBrackets ab) const;
+        inline std::string addrBrackToStr(IRIaddr ab) const;
         inline std::string valueToStr(Value value) const;
+        inline std::string addrSizeToStr(uint8 size) const;
         inline ValueType getValueType(Value value) const;
 
     private:

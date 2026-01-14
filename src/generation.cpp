@@ -103,25 +103,14 @@ std::string Generator::generate() const {
                     output << "sub ";
                     break;
             }
+
             // 生成地址尺寸
             if (lVT == ValueType::MEM) {
                 if (rVT == ValueType::MEM || rVT == ValueType::IMM) {
-                    switch (addressSize) {
-                        case 0:
-                            output << "byte ";
-                            break;
-                        case 1:
-                            output << "word ";
-                            break;
-                        case 2:
-                            output << "dword ";
-                            break;
-                        case 3:
-                            output << "qword ";
-                            break;
-                    }
+                    output << addrSizeToStr(addressSize) << " ";
                 }
             }
+            
             // 生成左值
             output << valueToStr(assign->leftValue) << ", ";
 
@@ -183,31 +172,22 @@ std::string Generator::generate() const {
                     output << assign->var.loc.reg.name << ", " << assign->defValue.value() << "\n";
                 }
                 else {
-                    switch (assign->var.size) {
-                        case 0:
-                            output << "byte ";
-                            break;
-                        case 1:
-                            output << "word ";
-                            break;
-                        case 2:
-                            output << "dword ";
-                            break;
-                        case 3:
-                            output << "qword ";
-                            break;
-                    }
-                    output << "[abs " << assign->var.loc.memAddr << "], " << assign->defValue.value() << "\n";
+                    output << addrSizeToStr(assign->var.size);
+                    output << " [abs " << assign->var.loc.memAddr << "], " << assign->defValue.value() << "\n";
                 }
             }
         }
     }
-        
+    
     return output.str();
 }
 
-inline std::string Generator::addrBrackToStr(AddressingBrackets ab) const {
-    return ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? "+" + ab.index : "") + ((!ab.scale.empty()) ? "*" + ab.scale : "") + ((!ab.displacement.empty()) ? "" + ab.displacement : "");
+inline std::string Generator::addrBrackToStr(IRIaddr ab) const {
+    std::string abs;
+    if (ab.base.empty() && ab.index.empty() && ab.scale.empty() && !ab.displacement.empty())
+        abs += "abs ";
+
+    return abs + ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? "+" + ab.index : "") + ((!ab.scale.empty()) ? "*" + ab.scale : "") + ((!ab.displacement.empty()) ? "" + ab.displacement : "");
 }
 
 inline std::string Generator::valueToStr(Value value) const {
@@ -216,7 +196,7 @@ inline std::string Generator::valueToStr(Value value) const {
             return value.reg.name;
             break;
         case MEM:
-            return "[abs " + addrBrackToStr(value.mem) + "]";
+            return "[" + addrBrackToStr(value.mem) + "]";
             break;
         case IMM:
             return value.imm;
@@ -230,6 +210,24 @@ inline std::string Generator::valueToStr(Value value) const {
             }
     }
     return "";
+}
+
+inline std::string Generator::addrSizeToStr(uint8 size) const {
+    switch (size) {
+        case 0:
+            return "byte";
+            break;
+        case 1:
+            return "word";
+            break;
+        case 2:
+            return "dword";
+            break;
+        case 3:
+            return "qword";
+            break;
+    }
+    return "byte";
 }
 
 inline ValueType Generator::getValueType(Value value) const {

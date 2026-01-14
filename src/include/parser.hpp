@@ -5,16 +5,6 @@
 #include <memory>
 #include <unordered_set>
 
-// // 语句节点
-// struct NodeStmt {
-
-// };
-
-// // 程序根节点
-// struct NodeProg {
-//     std::vector<NodeStmt> stmts;
-// };
-
 // 赋值类型
 enum AssiType {
     MOV,  // lV <- rV
@@ -156,11 +146,13 @@ const std::unordered_map<std::string, Register> RegMap = {
 };
 
 const std::unordered_set<std::string> JumpTypeSet = {
-    "z",      //0
-    "nz",     //非0
+    "z",      // 0
+    "nz",     // 非0
+    "e",      // 等于
+    "ne",     // 不等于
 };
 
-struct AddressingBrackets {
+struct IRIaddr {
     std::string base;
     std::string index;
     std::string scale;
@@ -198,7 +190,7 @@ struct Value {
     ValueType type;
     Var var;
     Register reg;
-    AddressingBrackets mem;
+    IRIaddr mem;
     std::string imm;
 };
 
@@ -282,7 +274,7 @@ class Parser {
         Token consume();
 
         Register parseRegister();
-        AddressingBrackets parseAddressingBrackets();
+        IRIaddr parseIRIaddr();
 
     private:
         const std::vector<Token> m_tokens;

@@ -65,7 +65,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
         //  消耗[
         m_index++;
         lV.type = ValueType::MEM;
-        lV.mem = parseAddressingBrackets();
+        lV.mem = parseIRIaddr();
 
         //  检查并消耗]
         if (!peekAndCheck(0, TokenType::right_bracket)) {
@@ -156,7 +156,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
             //  消耗[
             m_index++;
             rV.type = ValueType::MEM;
-            rV.mem = parseAddressingBrackets();
+            rV.mem = parseIRIaddr();
 
             //  检查并消耗]
             if (!peekAndCheck(0, TokenType::right_bracket)) {
@@ -480,8 +480,8 @@ Register Parser::parseRegister() {
 }
 
 // 解析寻址括号
-AddressingBrackets Parser::parseAddressingBrackets() {
-    AddressingBrackets ab;
+IRIaddr Parser::parseIRIaddr() {
+    IRIaddr ab;
 
     if (peekAndCheck(0, TokenType::reg)) {
         //reg

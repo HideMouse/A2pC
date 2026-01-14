@@ -22,6 +22,8 @@ class Generator {
 
     private:
         inline std::string addrBrackToStr(AddressingBrackets ab) const;
+        inline std::string valueToStr(Value value) const;
+        inline ValueType getValueType(Value value) const;
 
     private:
         const std::unique_ptr<Program> m_root;

@@ -9,11 +9,11 @@
 #include <unordered_map>
 
 enum NumType {
-    HEXwith0x,  // 带0x的十六进制
-    HEXwithH,   // 带H/h的十六进制
-    BINwith0b,  // 带0b的二进制
-    BINwithB,   // 带B/b的二进制
-    DEC         // 十进制
+    HEXwith0x,   // 带0x的十六进制
+    HEXwithH,    // 带H/h的十六进制
+    BINwith0b,   // 带0b的二进制
+    BINwithB,    // 带B/b的二进制
+    DECwithNone  // 十进制
 };
 
 enum TokenType {

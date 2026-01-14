@@ -15,6 +15,44 @@
 //     std::vector<NodeStmt> stmts;
 // };
 
+// 赋值类型
+enum AssiType {
+    MOV,  // lV <- rV
+    ADD,  // lV <- lV + rV
+    SUB,  // lV <- lV - rV
+    AND,  // lV <- lV & rV
+    OR,   // lV <- lV | rV
+    XOR,  // lV <- lV ^ rV
+    SHL,  // lV <- lV << rV
+    SHR,  // lV <- lV >> rV
+    INC,  // lV <- lV + sizeof(lV)
+    DEC   // lV <- lV - sizeof(lV)
+};
+
+const std::unordered_map<std::string, AssiType> AssiMap = {
+    {"=",   AssiType::MOV},
+    {"+=",  AssiType::ADD},
+    {"-=",  AssiType::SUB},
+    {"&=",  AssiType::AND},
+    {"|=",  AssiType::OR},
+    {"^=",  AssiType::XOR},
+    {"<<=", AssiType::SHL},
+    {">>=", AssiType::SHR},
+    {"++",  AssiType::INC},
+    {"--",  AssiType::DEC},
+};
+
+const std::unordered_map<TokenType, char> tokenToCharMap = {
+    {TokenType::left_angle_bracket,  '<'},
+    {TokenType::right_angle_bracket, '>'},
+    {TokenType::equal,               '='},
+    {TokenType::asterisk,            '*'},
+    {TokenType::add,                 '+'},
+    {TokenType::sub,                 '-'},
+    {TokenType::logic_and,           '&'},
+    {TokenType::logic_or,            '|'},
+    {TokenType::logic_xor,           '^'},
+};
 
 struct Register {
     std::string name;
@@ -130,16 +168,38 @@ struct AddressingBrackets {
     bool isNumber = false;
 };
 
+// 变量位置
 struct VarLoc {
     bool isReg;
     Register reg;
     std::string memAddr;
 };
 
+// 变量
 struct Var {
     uint8 size;
     std::string name;
     VarLoc loc;
+
+    // Var(uint8 size, const std::string& name, VarLoc loc)
+    //     : size(size), name(name), loc(loc) {}
+};
+
+// 值类型
+enum ValueType {
+    VAR,  // 变量
+    REG,  // 寄存器
+    MEM,  // 内存
+    IMM   // 立即数
+};
+
+// 值
+struct Value {
+    ValueType type;
+    Var var;
+    Register reg;
+    AddressingBrackets mem;
+    std::string imm;
 };
 
 
@@ -148,26 +208,16 @@ struct ASTNode {
     virtual ~ASTNode() = default;
 };
 
-// 寄存器赋值语句
-struct StmtRegAssi : public ASTNode {
-    std::string register_name;
-    uint8 type = 0;
-    std::string value;
-    bool getMemVal = false;
-    
-    StmtRegAssi(const std::string& reg, uint8 t, const std::string& val, bool getMem) 
-        : register_name(reg), type(t) , value(val), getMemVal(getMem) {}
-};
+// 赋值语句
+struct StmtAssi : public ASTNode {
+    AssiType assiType; // 赋值类型
+    Value leftValue;   // 左值
+    Value rightValue;  // 右值
 
-// 内存赋值语句
-struct StmtMemAssi : public ASTNode {
-    AddressingBrackets memAddr;
-    uint8 type = 0;
-    TokenType size;
-    std::string value;
-    
-    StmtMemAssi(AddressingBrackets addr, uint8 t, TokenType size, const std::string& v) 
-        : memAddr(addr), type(t), size(size), value(v) {}
+    uint8 addrSize;    // 地址尺寸
+
+    StmtAssi(AssiType type, Value lV, Value rV, uint8 addrSize)
+        : assiType(type), leftValue(lV), rightValue(rV), addrSize(addrSize) {}
 };
 
 // 前往语句
@@ -215,11 +265,12 @@ struct Program : public ASTNode {
 
 class Parser {
     public:
-        Parser(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {};
+        Parser(std::vector<Token> tokens)
+            : m_tokens(std::move(tokens)) {};
 
         std::unique_ptr<Program> parse();
-        std::unique_ptr<StmtRegAssi> parseStmtRegAssi();
-        std::unique_ptr<StmtMemAssi> parseStmtMemAssi();
+
+        std::unique_ptr<StmtAssi> parseStmtAssi();
         std::unique_ptr<StmtGoto> parseStmtGoto();
         std::unique_ptr<StmtLabel> parseStmtLabel();
         std::unique_ptr<StmtTest> parseStmtTest();
@@ -240,5 +291,5 @@ class Parser {
         std::vector<std::string> global_funcs;
 
     private:
-        std::unordered_set<std::string> VarNameSet;
+        std::unordered_map<std::string, Var> VarMap;
 };

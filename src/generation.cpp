@@ -27,89 +27,143 @@ std::string Generator::generate() const {
 
     auto& stats = m_root.get()->statements;
     for (auto& stat : stats) {
-        if (auto assign = dynamic_cast<StmtRegAssi*>(stat.get())) {
-            switch (assign->type) {
-                case 0:
+        if (auto assign = dynamic_cast<StmtAssi*>(stat.get())) {
+            ValueType lVT = getValueType(assign->leftValue);
+            ValueType rVT = getValueType(assign->rightValue);
+            uint8 addressSize = assign->addrSize;
+
+            // 生成赋值类型
+            switch (assign->assiType) {
+                case MOV:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "mov ";
                     break;
-                case TokenType::add:
+                case ADD:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "+=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "add ";
                     break;
-                case TokenType::sub:
+                case SUB:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "-=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "sub ";
                     break;
-                case TokenType::logic_and:
+                case AND:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "&=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "and ";
                     break;
-                case TokenType::logic_or:
+                case OR:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "|=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "or ";
                     break;
-                case TokenType::logic_xor:
+                case XOR:
+                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
+                        std::cerr << "^=两侧不能同时为内存\a\n";
+                        exit(-1);
+                    }
                     output << "xor ";
                     break;
-                case TokenType::left_angle_bracket:
+                case SHL:
+                    if (rVT != ValueType::IMM) {
+                        std::cerr << "<<=右侧只能为数值\a\n";
+                        exit(-1);
+                    }
                     output << "shl ";
                     break;
-                case TokenType::right_angle_bracket:
+                case SHR:
+                    if (rVT != ValueType::IMM) {
+                        std::cerr << ">>=右侧只能为数值\a\n";
+                        exit(-1);
+                    }
                     output << "shr ";
                     break;
-            }
-            output << assign->register_name << ", ";
-            if (assign->getMemVal) {
-                output << "[" << assign->value << "]\n";
-            }
-            else {
-                output << assign->value << "\n";
-            }
-        }
-        else if (auto assign = dynamic_cast<StmtMemAssi*>(stat.get())) {
-            switch (assign->type) {
-                case 0:
-                    output << "mov ";
-                    break;
-                case TokenType::add:
+                case INC:
+                    if (assign->leftValue.type == ValueType::VAR) {
+                        addressSize = assign->leftValue.var.size;
+                    }
                     output << "add ";
                     break;
-                case TokenType::sub:
+                case DEC:
+                    if (assign->leftValue.type == ValueType::VAR) {
+                        addressSize = assign->leftValue.var.size;
+                    }
                     output << "sub ";
                     break;
-                case TokenType::logic_and:
-                    output << "and ";
-                    break;
-                case TokenType::logic_or:
-                    output << "or ";
-                    break;
-                case TokenType::logic_xor:
-                    output << "xor ";
-                    break;
-                case TokenType::left_angle_bracket:
-                    output << "shl ";
-                    break;
-                case TokenType::right_angle_bracket:
-                    output << "shr ";
-                    break;
-                default:
-                    break;
             }
-            if (std::isdigit(assign->value[0])) {
-                switch (assign->size) {
-                    case TokenType::byte:
-                        output << "byte ";
+            // 生成地址尺寸
+            if (lVT == ValueType::MEM) {
+                if (rVT == ValueType::MEM || rVT == ValueType::IMM) {
+                    switch (addressSize) {
+                        case 0:
+                            output << "byte ";
+                            break;
+                        case 1:
+                            output << "word ";
+                            break;
+                        case 2:
+                            output << "dword ";
+                            break;
+                        case 3:
+                            output << "qword ";
+                            break;
+                    }
+                }
+            }
+            // 生成左值
+            output << valueToStr(assign->leftValue) << ", ";
+
+            // 获取左值尺寸
+            uint8 lVSize = 0;
+            switch (assign->leftValue.type) {
+                case REG:
+                    lVSize = assign->leftValue.reg.size;
+                    break;
+                case MEM:
+                    lVSize = assign->addrSize;
+                    break;
+                case VAR:
+                    if (assign->leftValue.var.loc.isReg) {
+                        lVSize = assign->leftValue.var.loc.reg.size;
+                    }
+                    else {
+                        lVSize = assign->leftValue.var.size;
+                    }
+            }
+            
+            // 生成右值
+            if (assign->assiType == AssiType::INC || assign->assiType == AssiType::DEC) {
+                // 无右值
+                switch (lVSize) {
+                    case 0:
+                        output << "1\n";
                         break;
-                    case TokenType::word:
-                        output << "word ";
+                    case 1:
+                        output << "2\n";
                         break;
-                    case TokenType::dword:
-                        output << "dword ";
+                    case 2:
+                        output << "4\n";
                         break;
-                    case TokenType::qword:
-                        output << "qword ";
-                        break;
-                    default:
+                    case 3:
+                        output << "8\n";
                         break;
                 }
             }
-            output << "[" << addrBrackToStr(assign->memAddr) << "], " << assign->value << "\n";
+            else {
+                output << valueToStr(assign->rightValue) << "\n";
+            }
         }
         else if (auto assign = dynamic_cast<StmtGoto*>(stat.get())) {
             output << "jmp " << assign->labelOrAddr << "\n";
@@ -153,5 +207,34 @@ std::string Generator::generate() const {
 }
 
 inline std::string Generator::addrBrackToStr(AddressingBrackets ab) const {
-    return ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? " + " + ab.index : "") + ((!ab.scale.empty()) ? " * " + ab.scale : "") + ((!ab.displacement.empty()) ? " " + ab.displacement : "");
+    return ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? "+" + ab.index : "") + ((!ab.scale.empty()) ? "*" + ab.scale : "") + ((!ab.displacement.empty()) ? "" + ab.displacement : "");
+}
+
+inline std::string Generator::valueToStr(Value value) const {
+    switch (value.type) {
+        case REG:
+            return value.reg.name;
+            break;
+        case MEM:
+            return "[abs " + addrBrackToStr(value.mem) + "]";
+            break;
+        case IMM:
+            return value.imm;
+            break;
+        case VAR:
+            if (value.var.loc.isReg) {
+                return value.var.loc.reg.name;
+            }
+            else {
+                return "[abs " + value.var.loc.memAddr + "]";
+            }
+    }
+    return "";
+}
+
+inline ValueType Generator::getValueType(Value value) const {
+    if (value.type == ValueType::VAR) {
+        return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+    }
+    return value.type;
 }

@@ -102,7 +102,7 @@ bool isAvailableNumber(const std::string& num) {
     else if (num.find_first_of("Hh") == (num.size() - 1))  type = HEXwithH;
     else if (num.find("0b") == 0)                          type = BINwith0b;
     else if (num.find_first_of("Bb") == (num.size() - 1))  type = BINwithB;
-    else                                                   type = DEC;
+    else                                                   type = DECwithNone;
     
     switch (type) {
         case HEXwith0x:
@@ -133,7 +133,7 @@ bool isAvailableNumber(const std::string& num) {
             */
             if (num.substr(0, num.size() - 1).find_first_of("23456789ABCDEFabcdefHhx") != std::string::npos) return false;
             break;
-        case DEC:
+        case DECwithNone:
             if (num.find_first_of("ABCDEFabcdefHhx") != std::string::npos) return false;
     }
     

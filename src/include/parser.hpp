@@ -150,6 +150,10 @@ const std::unordered_set<std::string> JumpTypeSet = {
     "nz",     // 非0
     "e",      // 等于
     "ne",     // 不等于
+    "o",      // 溢出
+    "no",     // 未溢出
+    "c",      // 进位
+    "nc",     // 无进位
 };
 
 struct IRIaddr {

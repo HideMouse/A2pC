@@ -165,7 +165,7 @@ std::string Generator::generate() const {
             output << "\n" << assign->labelName << ":\n";
         }
         else if (auto assign = dynamic_cast<StmtVarDef*>(stat.get())) {
-            if (assign->defValue.has_value()) {
+            if (assign->defValue.has_value() && VarUsedMap.at(assign->var.name)) {
                 output << ";" << assign->var.name;
                 output << "\nmov ";
                 if (assign->var.loc.isReg) {

@@ -4,6 +4,13 @@ void errLine(Token token);
 
 //public:
 
+ParseInfo Parser::getParseInfo() {
+    ParseInfo info;
+    info.varUsedMap = VarUsedMap;
+
+    return info;
+}
+
 std::unique_ptr<Program> Parser::parse() {
     auto program = std::make_unique<Program>();
     
@@ -337,6 +344,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
     // 向VarMap插入变量
     VarMap.insert({var.name, var});
+    VarUsedMap.insert({var.name, false});
 
     // 结束或设置初始值
     if (peekAndCheck(0, TokenType::semicolon)) {
@@ -552,6 +560,9 @@ Value Parser::parseValue() {
         }
         value.type = ValueType::VAR;
         value.var = VarMap.at(varName);
+
+        //  标记变量使用
+        VarUsedMap.at(varName) = true;
     }
     else if (peekAndCheck(0, TokenType::reg)) {
         // 寄存器

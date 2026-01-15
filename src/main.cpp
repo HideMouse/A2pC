@@ -36,9 +36,10 @@ int main(int argc, char* argv[]) {
     // 解析器
     Parser parser(std::move(tokens));
     std::unique_ptr<Program> program = parser.parse();
+    ParseInfo pInfo = parser.getParseInfo();
 
     // 生成器
-    Generator generator(program, info);
+    Generator generator(program, info, pInfo);
     {
         std::fstream output(result.outputFile, std::ios::out);
         if (!output.is_open()) {

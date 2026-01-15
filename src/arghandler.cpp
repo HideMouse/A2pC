@@ -43,7 +43,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 exit(0);
                 break;
             case ArgType::VERSION:
-                std::cout << "A2pC v0.3.0 on windows\n";
+                std::cout << "A2pC v0.3.1 on windows\n";
                 exit(0);
                 break;
             case ArgType::OUPUT_FILE:

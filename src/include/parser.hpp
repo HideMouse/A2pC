@@ -256,11 +256,16 @@ struct Program : public ASTNode {
     std::vector<std::string> extern_funcs;
 };
 
+struct ParseInfo {
+    std::unordered_map<std::string, bool> varUsedMap;
+};
+
 class Parser {
     public:
         Parser(std::vector<Token> tokens)
             : m_tokens(std::move(tokens)) {};
 
+        ParseInfo getParseInfo();
         std::unique_ptr<Program> parse();
 
         std::unique_ptr<StmtAssi> parseStmtAssi();
@@ -288,4 +293,5 @@ class Parser {
 
     private:
         std::unordered_map<std::string, Var> VarMap;
+        std::unordered_map<std::string, bool> VarUsedMap;
 };

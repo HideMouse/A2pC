@@ -42,43 +42,10 @@ std::unique_ptr<Program> Parser::parse() {
 
 std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     //解析左值:
-    Value lV;
-    // 第一Token是啥?
-    if (peekAndCheck(0, TokenType::ident)) {
-        // 变量
-        std::string varName = consume().value.value();
-        if (!VarMap.contains(varName)) {
-            errLine(m_tokens.at(m_index - 1));
-            std::cerr << "变量" << varName << "尚未定义 !!!\a\n";
-            exit(-1);
-        }
-        lV.type = ValueType::VAR;
-        lV.var = VarMap.at(varName);
-    }
-    else if (peekAndCheck(0, TokenType::reg)) {
-        // 寄存器
-        lV.type = ValueType::REG;
-        lV.reg = parseRegister();
-        m_index++;
-    }
-    else if (peekAndCheck(0, TokenType::left_bracket)) {
-        // 内存
-        //  消耗[
-        m_index++;
-        lV.type = ValueType::MEM;
-        lV.mem = parseIRIaddr();
-
-        //  检查并消耗]
-        if (!peekAndCheck(0, TokenType::right_bracket)) {
-            errLine(peek().value());
-            std::cerr << "期望的 ']' !!!\a\n";
-            exit(-1);
-        }
-        m_index++;
-    }
-    else {
+    Value lV = parseValue();
+    if (lV.type == IMM) {
         errLine(peek().value());
-        std::cerr << "无效的左值 !!!\a\n";
+        std::cerr << "出现了无效的左值 !!!\a\n";
         exit(-1);
     }
 
@@ -134,49 +101,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
         }
         
         //  解析右值:
-        //   第一个Token是啥?
-        if (peekAndCheck(0, TokenType::ident)) {
-            // 变量
-            std::string varName = consume().value.value();
-            if (!VarMap.contains(varName)) {
-                errLine(m_tokens.at(m_index - 1));
-                std::cerr << "变量" << varName << "尚未定义 !!!\a\n";
-                exit(-1);
-            }
-            rV.type = ValueType::VAR;
-            rV.var = VarMap.at(varName);
-        }
-        else if (peekAndCheck(0, TokenType::reg)) {
-            // 寄存器
-            rV.type = ValueType::REG;
-            rV.reg = parseRegister();
-            m_index++;
-        }
-        else if (peekAndCheck(0, TokenType::left_bracket)) {
-            // 内存
-            //  消耗[
-            m_index++;
-            rV.type = ValueType::MEM;
-            rV.mem = parseIRIaddr();
-
-            //  检查并消耗]
-            if (!peekAndCheck(0, TokenType::right_bracket)) {
-                errLine(peek().value());
-                std::cerr << "期望的 ']' !!!\a\n";
-                exit(-1);
-            }
-            m_index++;
-        }
-        else if (peekAndCheck(0, TokenType::imm)) {
-            // 立即数
-            rV.type = ValueType::IMM;
-            rV.imm = consume().value.value();
-        }
-        else {
-            errLine(peek().value());
-            std::cerr << "无效的右值 !!!\a\n";
-            exit(-1);
-        }
+        rV = parseValue();
     }
 
     // 检查并消耗;
@@ -263,16 +188,12 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     m_index++;
 
     // 左操作数
-    std::string left;
-    if (peekAndCheck(0, TokenType::reg)) {
-        left = parseRegister().name;
-    }
-    else {
+    Value left = parseValue();
+    if (left.type == IMM) {
         errLine(peek().value());
-        std::cerr << "需要一个寄存器作为左操作数 !!!\a\n";
+        std::cerr << "出现了无效的左操作数 !!!\a\n";
         exit(-1);
     }
-    m_index++;
 
     // 逗号
     if (!peekAndCheck(0, TokenType::comma)) {
@@ -283,19 +204,12 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     m_index++;
 
     // 右操作数
-    std::string right;
-    if (peekAndCheck(0, TokenType::imm)) {
-        right = peek().value().value.value();
-    }
-    else if (peekAndCheck(0, TokenType::reg)) {
-        right = parseRegister().name;
-    }
-    else {
+    Value right = parseValue();
+    if (getValueType(right) == MEM) {
         errLine(peek().value());
-        std::cerr << "需要一个寄存器或数值作为右操作数 !!!\a\n";
+        std::cerr << "出现了无效的右操作数 !!!\a\n";
         exit(-1);
     }
-    m_index++;
 
     // 逗号
     if (!peekAndCheck(0, TokenType::comma)) {
@@ -322,7 +236,7 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     }
     m_index++;
 
-    // 括号
+    // 右括号
     if (!peekAndCheck(0, TokenType::right_paren)) {
         errLine(peek().value());
         std::cerr << "期望的 ')' !!!\a\n";
@@ -622,6 +536,63 @@ IRIaddr Parser::parseIRIaddr() {
     }
 
     return ab;
+}
+
+// 解析值
+Value Parser::parseValue() {
+    Value value;
+
+    if (peekAndCheck(0, TokenType::ident)) {
+        // 变量
+        std::string varName = consume().value.value();
+        if (!VarMap.contains(varName)) {
+            errLine(m_tokens.at(m_index - 1));
+            std::cerr << "变量" << varName << "尚未定义 !!!\a\n";
+            exit(-1);
+        }
+        value.type = ValueType::VAR;
+        value.var = VarMap.at(varName);
+    }
+    else if (peekAndCheck(0, TokenType::reg)) {
+        // 寄存器
+        value.type = ValueType::REG;
+        value.reg = parseRegister();
+        m_index++;
+    }
+    else if (peekAndCheck(0, TokenType::left_bracket)) {
+        // 内存
+        //  消耗[
+        m_index++;
+        value.type = ValueType::MEM;
+        value.mem = parseIRIaddr();
+
+        //  检查并消耗]
+        if (!peekAndCheck(0, TokenType::right_bracket)) {
+            errLine(peek().value());
+            std::cerr << "期望的 ']' !!!\a\n";
+            exit(-1);
+        }
+        m_index++;
+    }
+    else if (peekAndCheck(0, TokenType::imm)) {
+        // 立即数
+        value.type = ValueType::IMM;
+        value.imm = consume().value.value();
+    }
+    else {
+        errLine(peek().value());
+        std::cerr << "出现了无效的值 !!!\a\n";
+        exit(-1);
+    }
+
+    return value;
+}
+
+inline ValueType Parser::getValueType(Value value) const {
+    if (value.type == ValueType::VAR) {
+        return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+    }
+    return value.type;
 }
 
 // 行号报错

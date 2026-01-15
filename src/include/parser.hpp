@@ -176,9 +176,6 @@ struct Var {
     uint8 size;
     std::string name;
     VarLoc loc;
-
-    // Var(uint8 size, const std::string& name, VarLoc loc)
-    //     : size(size), name(name), loc(loc) {}
 };
 
 // 值类型
@@ -226,13 +223,13 @@ struct StmtGoto : public ASTNode {
 
 // 测试与语句
 struct StmtTest : public ASTNode {
-    std::string left;
-    std::string right;
+    Value left;
+    Value right;
     std::string labelOrAddr;
-    std::string type;
+    std::string jumpType;
     
-    StmtTest(const std::string& l, const std::string& r, const std::string& loa, const std::string& type) 
-        : left(l), right(r), labelOrAddr(loa), type(type) {}
+    StmtTest(Value l, Value r, const std::string& loa, const std::string& type) 
+        : left(l), right(r), labelOrAddr(loa), jumpType(type) {}
 };
 
 // 标签
@@ -279,6 +276,9 @@ class Parser {
 
         Register parseRegister();
         IRIaddr parseIRIaddr();
+        Value parseValue();
+
+        inline ValueType getValueType(Value value) const;
 
     private:
         const std::vector<Token> m_tokens;

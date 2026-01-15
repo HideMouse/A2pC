@@ -158,11 +158,11 @@ std::string Generator::generate() const {
             output << "jmp " << assign->labelOrAddr << "\n";
         }
         else if (auto assign = dynamic_cast<StmtTest*>(stat.get())) {
-            output << "test " << assign->left << ", " << assign->right;
-            output << "\nj" << assign->type << " " << assign->labelOrAddr << "\n";
+            output << "test " << valueToStr(assign->left) << ", " << valueToStr(assign->right);
+            output << "\nj" << assign->jumpType << " " << assign->labelOrAddr << "\n";
         }
         else if (auto assign = dynamic_cast<StmtLabel*>(stat.get())) {
-            output << assign->labelName << ":\n";
+            output << "\n" << assign->labelName << ":\n";
         }
         else if (auto assign = dynamic_cast<StmtVarDef*>(stat.get())) {
             if (assign->defValue.has_value()) {

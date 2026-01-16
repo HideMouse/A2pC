@@ -104,6 +104,13 @@ std::string Generator::generate() const {
                     break;
             }
 
+            // 修复地址尺寸
+            if (assign->rightValue.type == ValueType::VAR &&
+                assign->rightValue.var.qualifier.has_value() &&
+                assign->rightValue.var.qualifier.value().type == VarQualifierType::NSC) {
+                addressSize = assign->rightValue.var.size;
+            }
+
             // 生成地址尺寸
             if (lVT == ValueType::MEM) {
                 if (rVT == ValueType::MEM || rVT == ValueType::IMM) {
@@ -165,7 +172,10 @@ std::string Generator::generate() const {
             output << "\n" << assign->labelName << ":\n";
         }
         else if (auto assign = dynamic_cast<StmtVarDef*>(stat.get())) {
-            if (assign->defValue.has_value() && VarUsedMap.at(assign->var.name)) {
+            if (assign->defValue.has_value() &&
+                VarUsedMap.at(assign->var.name) &&
+                (!assign->var.qualifier.has_value() ||
+                 assign->var.qualifier.value().type != VarQualifierType::NSC)) {
                 output << ";" << assign->var.name;
                 output << "\nmov ";
                 if (assign->var.loc.isReg) {
@@ -182,12 +192,8 @@ std::string Generator::generate() const {
     return output.str();
 }
 
-inline std::string Generator::addrBrackToStr(IRIaddr ab) const {
-    std::string abs;
-    if (ab.base.empty() && ab.index.empty() && ab.scale.empty() && !ab.displacement.empty())
-        abs += "abs ";
-
-    return abs + ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? "+" + ab.index : "") + ((!ab.scale.empty()) ? "*" + ab.scale : "") + ((!ab.displacement.empty()) ? "" + ab.displacement : "");
+inline std::string Generator::iriAddrToStr(IRIaddr ab) const {
+    return (ab.isNumber ? "abs " : "") + ((!ab.base.empty()) ? ab.base : "") + ((!ab.index.empty()) ? "+" + ab.index : "") + ((!ab.scale.empty()) ? "*" + ab.scale : "") + ((!ab.displacement.empty()) ? "" + ab.displacement : "");
 }
 
 inline std::string Generator::valueToStr(Value value) const {
@@ -196,12 +202,16 @@ inline std::string Generator::valueToStr(Value value) const {
             return value.reg.name;
             break;
         case MEM:
-            return "[" + addrBrackToStr(value.mem) + "]";
+            return "[" + iriAddrToStr(value.mem) + "]";
             break;
         case IMM:
             return value.imm;
             break;
         case VAR:
+            if (value.var.qualifier.has_value() && value.var.qualifier.value().type == VarQualifierType::NSC) {
+                return value.var.qualifier.value().imm;
+            }
+
             if (value.var.loc.isReg) {
                 return value.var.loc.reg.name;
             }
@@ -232,7 +242,12 @@ inline std::string Generator::addrSizeToStr(uint8 size) const {
 
 inline ValueType Generator::getValueType(Value value) const {
     if (value.type == ValueType::VAR) {
-        return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+        if (!value.var.qualifier.has_value()) {
+            return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+        }
+        else if (value.var.qualifier.value().type == VarQualifierType::NSC) {
+            return ValueType::IMM;
+        }
     }
     return value.type;
 }

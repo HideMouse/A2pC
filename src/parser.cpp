@@ -50,7 +50,7 @@ std::unique_ptr<Program> Parser::parse() {
 std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     //解析左值:
     Value lV = parseValue();
-    if (lV.type == IMM) {
+    if (getValueType(lV) == IMM) {
         errLine(peek().value());
         std::cerr << "出现了无效的左值 !!!\a\n";
         exit(-1);
@@ -196,7 +196,7 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
 
     // 左操作数
     Value left = parseValue();
-    if (left.type == IMM) {
+    if (getValueType(left) == IMM) {
         errLine(peek().value());
         std::cerr << "出现了无效的左操作数 !!!\a\n";
         exit(-1);
@@ -283,10 +283,25 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
 
 std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     Var var;
-    // 设置变量大小并消耗
+
+    //设置变量大小并消耗:
     var.size = consume().type - TokenType::byte;
 
-    // 获取变量名
+    //获取修饰:
+    VarQualifier vq;
+    if (peek().has_value() && VarQualTypeMap.contains(peek().value().type)) {
+        vq.type = VarQualTypeMap.at(consume().type);
+
+        // 检查::并消耗
+        if (!peekAndCheck(0, TokenType::colon) || !peekAndCheck(1, TokenType::colon)) {
+            errLine(peek().value());
+            std::cerr << "需要 \"::\" !\a\n";
+            exit(-1);
+        }
+        m_index += 2;
+    }
+
+    //获取变量名:
     if (!peekAndCheck(0, TokenType::ident)) {
         errLine(peek().value());
         std::cerr << "应有变量名 !!!\a\n";
@@ -300,7 +315,43 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     }
     
 
-    // 左括号
+    //判断储存位置
+    if (vq.type == VarQualifierType::NSC) {
+        // 为不储存的常量时:
+        //  等号
+        if (!peekAndCheck(0, TokenType::equal)) {
+            errLine(peek().value());
+            std::cerr << "期望的 '=' !!!\a\n";
+            exit(-1);
+        }
+        m_index++;
+
+        //  处理赋值
+        if (!peekAndCheck(0, TokenType::imm)) {
+            errLine(peek().value());
+            std::cerr << "变量" << var.name << "拥有nsc修饰, 故只能赋值数值 !!!\a\n";
+            exit(-1);
+        }
+        vq.imm = consume().value.value();
+        var.qualifier = vq;
+
+        //向VarMap插入变量:
+        VarMap.insert({var.name, var});
+        VarUsedMap.insert({var.name, false});
+
+        //  分号
+        if (!peekAndCheck(0, TokenType::semicolon)) {
+            errLine(peek().value());
+            std::cerr << "期望的 ';' !!!\a\n";
+            exit(-1);
+        }
+        m_index++;
+
+        return std::make_unique<StmtVarDef>(var, vq.imm);
+    }
+
+    // 为正常变量时
+    //  左括号
     if (!peekAndCheck(0, TokenType::left_paren)) {
         errLine(peek().value());
         std::cerr << "期望的 '(' !!!\a\n";
@@ -308,7 +359,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     }
     m_index++;
 
-    // 判断储存位置
+    //  获取储存位置
     if (peekAndCheck(0, TokenType::imm)) {
         // 内存
         var.loc.isReg = false;
@@ -334,7 +385,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         exit(-1);
     }
     
-    // 右括号
+    //  右括号
     if (!peekAndCheck(0, TokenType::right_paren)) {
         errLine(peek().value());
         std::cerr << "期望的 ')' !!!\a\n";
@@ -342,11 +393,11 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     }
     m_index++;
 
-    // 向VarMap插入变量
+    //向VarMap插入变量:
     VarMap.insert({var.name, var});
     VarUsedMap.insert({var.name, false});
 
-    // 结束或设置初始值
+    //结束或设置初始值:
     if (peekAndCheck(0, TokenType::semicolon)) {
         // 结束行
         m_index++;
@@ -601,7 +652,12 @@ Value Parser::parseValue() {
 
 inline ValueType Parser::getValueType(Value value) const {
     if (value.type == ValueType::VAR) {
-        return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+        if (!value.var.qualifier.has_value()) {
+            return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
+        }
+        else if (value.var.qualifier.value().type == VarQualifierType::NSC) {
+            return ValueType::IMM;
+        }
     }
     return value.type;
 }

@@ -164,6 +164,22 @@ struct IRIaddr {
     bool isNumber = false;
 };
 
+// 变量修饰类型
+enum VarQualifierType {
+    NSC,        // Not Stored Const 不储存的常量
+};
+
+// 变量修饰类型表
+const std::unordered_map<TokenType, VarQualifierType> VarQualTypeMap = {
+    {TokenType::nsc,  VarQualifierType::NSC},
+};
+
+// 变量修饰
+struct VarQualifier {
+    VarQualifierType type;
+    std::string imm;
+};
+
 // 变量位置
 struct VarLoc {
     bool isReg;
@@ -175,6 +191,7 @@ struct VarLoc {
 struct Var {
     uint8 size;
     std::string name;
+    std::optional<VarQualifier> qualifier;
     VarLoc loc;
 };
 

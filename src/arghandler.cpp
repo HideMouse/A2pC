@@ -36,6 +36,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 std::cout << "选项:\n";
                 std::cout << "  --help     获取帮助\n";
                 std::cout << "  --version  查看当前的A2pC版本号\n";
+                std::cout << "  <file>     在<file>中填入源代码文件\n";
                 std::cout << "  -o <file>  在<file>中填入输出文件\n";
                 std::cout << "\n";
                 std::cout << "有关更多信息, 请前往:\n";
@@ -43,7 +44,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 exit(0);
                 break;
             case ArgType::VERSION:
-                std::cout << "A2pC v0.3.1 on windows\n";
+                std::cout << "A2pC v0.3.6 on windows\n";
                 exit(0);
                 break;
             case ArgType::OUPUT_FILE:

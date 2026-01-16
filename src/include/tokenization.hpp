@@ -23,7 +23,7 @@ enum TokenType {
     qword,                //64bit 8Byte
 
     reg,                  //寄存器修饰
-    afc,                  //自动填充常量修饰
+    nsc,                  //不储存的常量修饰
 
     go_to,                //前往
     cond_goto,            //条件前往
@@ -64,7 +64,7 @@ const std::unordered_map<std::string, TokenType> tokenMap = {
     {"qword",  TokenType::qword},
 
     {"reg",    TokenType::reg},
-    {"afc",    TokenType::afc},
+    {"nsc",    TokenType::nsc},
 
     {"goto",   TokenType::go_to},
     {"if",     TokenType::cond_goto},

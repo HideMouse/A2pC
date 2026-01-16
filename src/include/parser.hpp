@@ -266,6 +266,14 @@ struct StmtVarDef : public ASTNode {
         : var(var), defValue(value) {}
 };
 
+// 内联汇编语句
+struct StmtInlineAsm : public ASTNode {
+    std::string assemblyCode;
+
+    StmtInlineAsm(const std::string& code) 
+        : assemblyCode(code) {}
+};
+
 // 程序根节点
 struct Program : public ASTNode {
     std::vector<std::unique_ptr<ASTNode>> statements;
@@ -290,6 +298,7 @@ class Parser {
         std::unique_ptr<StmtLabel> parseStmtLabel();
         std::unique_ptr<StmtTest> parseStmtTest();
         std::unique_ptr<StmtVarDef> parseStmtVarDef();
+        std::unique_ptr<StmtInlineAsm> parseStmtInlineAsm();
 
     private:
         std::optional<Token> peek(uint32 offset = 0) const;
@@ -301,6 +310,7 @@ class Parser {
         Value parseValue();
 
         inline ValueType getValueType(Value value) const;
+        inline int32 getPeekOffset() const;
 
     private:
         const std::vector<Token> m_tokens;

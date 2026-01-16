@@ -40,11 +40,34 @@ std::vector<Token> Tokenizer::tokenize() {
 
             if (!isAvailableNumber(buffer)) {
                 std::cerr << "line: " << lineIndex << "\n  ";
-                std::cerr << buffer << "并不是数字!\a\n";
+                std::cerr << buffer << "并不是数字\a\n";
                 exit(-1);
             }
 
             tokens.push_back({ .type = TokenType::imm, .value = buffer, .lineIndex = lineIndex });
+            buffer.clear();
+            continue;
+        }
+        else if (peek().value() == '$') {
+            // 提前消耗一个, 避免检测到初始的$
+            buffer.push_back(consume());
+
+            while (peek().has_value() && peek().value() != '$') {
+                if (peek().value() == '\n') {
+                    lineIndex++;
+                }
+                buffer.push_back(consume());
+            }
+
+            if (!peek().has_value()) {
+                std::cerr << "line: " << lineIndex << "\n  ";
+                std::cerr << "内联汇编代码缺失结束处的 '$'\a\n";
+                exit(-1);
+            }
+
+            m_index++;
+
+            tokens.push_back({ .type = TokenType::assembly, .value = buffer.substr(1, buffer.size() - 1), .lineIndex = lineIndex });
             buffer.clear();
             continue;
         }
@@ -59,7 +82,7 @@ std::vector<Token> Tokenizer::tokenize() {
         }
         else {
             std::cerr << "line: " << lineIndex << "\n  ";
-            std::cerr << "意外的标记!\a\n";
+            std::cerr << "意外的标记\a\n";
             exit(-1);
         }
     }

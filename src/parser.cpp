@@ -35,9 +35,12 @@ std::unique_ptr<Program> Parser::parse() {
                  peek().value().type <= TokenType::qword) {
             program.get()->statements.push_back(parseStmtVarDef());
         }
+        else if (peek().value().type == TokenType::ilasm) {
+            program.get()->statements.push_back(parseStmtInlineAsm());
+        }
         else {
             errLine(peek().value());
-            std::cout << "存在无效Token !!!\a\n";
+            std::cout << "存在无效Token\a\n";
             exit(-1);
         }
     }
@@ -51,8 +54,8 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     //解析左值:
     Value lV = parseValue();
     if (getValueType(lV) == IMM) {
-        errLine(peek().value());
-        std::cerr << "出现了无效的左值 !!!\a\n";
+        errLine(peek(getPeekOffset() - 1).value());
+        std::cerr << "出现了无效的左值\a\n";
         exit(-1);
     }
 
@@ -60,6 +63,12 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     AssiType type;
     std::string assiStr;
     while (assiStr.length() <= 3 && !AssiMap.contains(assiStr)) {
+        if (!peek().has_value()) {
+            errLine(peek(-1).value());
+            std::cerr << "解析赋值类型时因无值而中断\a\n";
+            exit(-1);
+        }
+
         TokenType tt = peek().value().type;
         if (!tokenToCharMap.contains(tt)) break;
         assiStr.push_back(tokenToCharMap.at(tt));
@@ -67,7 +76,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     }
     if (!AssiMap.contains(assiStr)) {
         errLine(m_tokens.at(m_index - 1));
-        std::cerr << "无效的赋值类型" << assiStr << " !!!\a\n";
+        std::cerr << "无效的赋值类型: " << assiStr << "\a\n";
         exit(-1);
     }
     type = AssiMap.at(assiStr);
@@ -78,8 +87,8 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     if (type == AssiType::INC || type == AssiType::DEC) {
         // 是 -> 没有右值
         if (!peekAndCheck(0, TokenType::semicolon)) {
-            errLine(peek().value());
-            std::cerr << "递增与递减不需要右值 !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "递增与递减不需要右值\a\n";
             exit(-1);
         }
         m_index++;
@@ -93,15 +102,15 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
             // 消耗(
             m_index++;
             if (!peek().has_value() || !(peek().value().type < 4)) {
-                errLine(peek().value());
-                std::cerr << "括号内应有一个数据类型 !!!\a\n";
+                errLine(peek(getPeekOffset()).value());
+                std::cerr << "括号内应有一个数据类型\a\n";
                 exit(-1);
             }
             size = peek().value().type;
             m_index++;
             if (!peekAndCheck(0, TokenType::right_paren)) {
-                errLine(peek().value());
-                std::cerr << "期望的 ')' !!!\a\n";
+                errLine(peek(getPeekOffset()).value());
+                std::cerr << "期望的 ')'\a\n";
                 exit(-1);
             }
             m_index++;
@@ -113,8 +122,8 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
 
     // 检查并消耗;
     if (!peekAndCheck(0, TokenType::semicolon)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ';' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
         exit(-1);
     }
     m_index++;
@@ -136,15 +145,15 @@ std::unique_ptr<StmtGoto> Parser::parseStmtGoto() {
         m_index++;
     }
     else {
-        errLine(peek().value());
-        std::cerr << "在goto后缺失寄存器/数字/标签名 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "在goto后缺失寄存器/数字/标签名\a\n";
         exit(-1);
     }
 
     // 检查分号
     if (!peekAndCheck(0, TokenType::semicolon)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ';' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
         exit(-1);
     }
     m_index++;
@@ -163,7 +172,7 @@ std::unique_ptr<StmtLabel> Parser::parseStmtLabel() {
         }
         else {
             errLine(peek().value());
-            std::cerr << "global 后缺失标签名 !!!\a\n";
+            std::cerr << "global 后缺失标签名\a\n";
             exit(-1);
         }
     }
@@ -173,8 +182,8 @@ std::unique_ptr<StmtLabel> Parser::parseStmtLabel() {
     }
 
     if (!peekAndCheck(0, TokenType::colon)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ':' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ':'\a\n";
         exit(-1);
     }
     m_index++;
@@ -188,8 +197,8 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
 
     // 左括号
     if (!peekAndCheck(0, TokenType::left_paren)) {
-        errLine(peek().value());
-        std::cerr << "期望的 '(' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 '('\a\n";
         exit(-1);
     }
     m_index++;
@@ -197,15 +206,15 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     // 左操作数
     Value left = parseValue();
     if (getValueType(left) == IMM) {
-        errLine(peek().value());
-        std::cerr << "出现了无效的左操作数 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "出现了无效的左操作数\a\n";
         exit(-1);
     }
 
     // 逗号
     if (!peekAndCheck(0, TokenType::comma)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ',' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ','\a\n";
         exit(-1);
     }
     m_index++;
@@ -213,15 +222,15 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     // 右操作数
     Value right = parseValue();
     if (getValueType(right) == MEM) {
-        errLine(peek().value());
-        std::cerr << "出现了无效的右操作数 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "出现了无效的右操作数\a\n";
         exit(-1);
     }
 
     // 逗号
     if (!peekAndCheck(0, TokenType::comma)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ',' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ','\a\n";
         exit(-1);
     }
     m_index++;
@@ -237,24 +246,24 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
         }
     }
     else {
-        errLine(peek().value());
-        std::cerr << "在第二个 ',' 后缺失 JumpType !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "在第二个 ',' 后缺失 JumpType\a\n";
         exit(-1);
     }
     m_index++;
 
     // 右括号
     if (!peekAndCheck(0, TokenType::right_paren)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ')' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ')'\a\n";
         exit(-1);
     }
     m_index++;
 
     // to
     if (!peekAndCheck(0, TokenType::to)) {
-        errLine(peek().value());
-        std::cerr << "期望的 \"to\" !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 \"to\"\a\n";
         exit(-1);
     }
     m_index++;
@@ -265,15 +274,15 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
         value = consume().value.value();
     }
     else {
-        errLine(peek().value());
-        std::cerr << "在to后缺失数字/标签名 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "在to后缺失数字/标签名\a\n";
         exit(-1);
     }
     
     // 分号
     if (!peekAndCheck(0, TokenType::semicolon)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ';' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
         exit(-1);
     }
     m_index++;
@@ -294,7 +303,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
         // 检查::并消耗
         if (!peekAndCheck(0, TokenType::colon) || !peekAndCheck(1, TokenType::colon)) {
-            errLine(peek().value());
+            errLine(peek(getPeekOffset()).value());
             std::cerr << "需要 \"::\" !\a\n";
             exit(-1);
         }
@@ -303,14 +312,14 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
     //获取变量名:
     if (!peekAndCheck(0, TokenType::ident)) {
-        errLine(peek().value());
-        std::cerr << "应有变量名 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "应有变量名\a\n";
         exit(-1);
     }
     var.name = consume().value.value();
     if (VarMap.contains(var.name)) {
         errLine(peek().value());
-        std::cerr << "变量" << var.name << "已被声明 !!!\a\n";
+        std::cerr << "变量" << var.name << "已被声明\a\n";
         exit(-1);
     }
     
@@ -320,16 +329,16 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         // 为不储存的常量时:
         //  等号
         if (!peekAndCheck(0, TokenType::equal)) {
-            errLine(peek().value());
-            std::cerr << "期望的 '=' !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "期望的 '='\a\n";
             exit(-1);
         }
         m_index++;
 
         //  处理赋值
         if (!peekAndCheck(0, TokenType::imm)) {
-            errLine(peek().value());
-            std::cerr << "变量" << var.name << "拥有nsc修饰, 故只能赋值数值 !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "变量" << var.name << "拥有nsc修饰, 故只能赋值数值\a\n";
             exit(-1);
         }
         vq.imm = consume().value.value();
@@ -341,8 +350,8 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
         //  分号
         if (!peekAndCheck(0, TokenType::semicolon)) {
-            errLine(peek().value());
-            std::cerr << "期望的 ';' !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "期望的 ';'\a\n";
             exit(-1);
         }
         m_index++;
@@ -353,8 +362,8 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     // 为正常变量时
     //  左括号
     if (!peekAndCheck(0, TokenType::left_paren)) {
-        errLine(peek().value());
-        std::cerr << "期望的 '(' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 '('\a\n";
         exit(-1);
     }
     m_index++;
@@ -372,7 +381,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         m_index++;
         if (var.loc.reg.size < var.size) {
             errLine(peek().value());
-            std::cerr << "寄存器" << var.loc.reg.name << "无法容纳变量" << var.name << ", 因为其位数过小 !!!\a\n";
+            std::cerr << "寄存器" << var.loc.reg.name << "无法容纳变量" << var.name << ", 因为其位数过小\a\n";
             exit(-1);
         }
         else if (var.loc.reg.size > var.size) {
@@ -380,15 +389,15 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         }
     }
     else {
-        errLine(peek().value());
-        std::cerr << "变量" << var.name << "的储存位置无效 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "变量" << var.name << "的储存位置无效\a\n";
         exit(-1);
     }
     
     //  右括号
     if (!peekAndCheck(0, TokenType::right_paren)) {
-        errLine(peek().value());
-        std::cerr << "期望的 ')' !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ')'\a\n";
         exit(-1);
     }
     m_index++;
@@ -409,16 +418,16 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
         // 粗略处理赋值
         if (!peekAndCheck(0, TokenType::imm)) {
-            errLine(peek().value());
-            std::cerr << "对变量" << var.name << "进行了无效的赋值 !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "对变量" << var.name << "进行了无效的赋值\a\n";
             exit(-1);
         }
         std::string value = consume().value.value();
 
         // 分号
         if (!peekAndCheck(0, TokenType::semicolon)) {
-            errLine(peek().value());
-            std::cerr << "期望的 ';' !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "期望的 ';'\a\n";
             exit(-1);
         }
         m_index++;
@@ -426,10 +435,49 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         return std::make_unique<StmtVarDef>(var, value);
     }
     else {
-        errLine(peek().value());
-        std::cerr << "变量" << var.name << "在声明后既不结束行也不进行赋值 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "变量" << var.name << "在声明后既不结束行也不进行赋值\a\n";
         exit(-1);
     }
+}
+
+std::unique_ptr<StmtInlineAsm> Parser::parseStmtInlineAsm() {
+    // 消耗asm
+    m_index++;
+
+    // 获取汇编代码
+    if (!peekAndCheck(0, TokenType::assembly)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "asm后缺少$$包围的汇编代码\a\n";
+        exit(-1);
+    }
+    std::string code = consume().value.value();
+
+    // 删去多个连续换行
+    while (code.find("\n\n") != std::string::npos) {
+        size_t pos = code.find("\n\n");
+        code.erase(pos, 1);
+    }
+
+    // 删去末尾换行
+    if (!code.empty() && code.back() == '\n') {
+        code.pop_back();
+    }
+
+    // 删去首个换行
+    if (!code.empty() && code.front() == '\n') {
+        code.erase(0, 1);
+    }
+
+    // 分号
+    if (!peekAndCheck(0, TokenType::semicolon)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
+        exit(-1);
+    }
+    m_index++;
+
+    return std::make_unique<StmtInlineAsm>(code);
 }
 
 //private:
@@ -459,7 +507,7 @@ Register Parser::parseRegister() {
 
     // 检查::并消耗
     if (!peekAndCheck(0, TokenType::colon) || !peekAndCheck(1, TokenType::colon)) {
-        errLine(peek().value());
+        errLine(peek(getPeekOffset()).value());
         std::cerr << "需要 \"::\" !\a\n";
         exit(-1);
     }
@@ -467,7 +515,7 @@ Register Parser::parseRegister() {
 
     // 检查寄存器名
     if (!peekAndCheck(0, TokenType::ident)) {
-        errLine(peek().value());
+        errLine(peek(getPeekOffset()).value());
         std::cerr << "需要寄存器名!\a\n";
         exit(-1);
     }
@@ -491,7 +539,7 @@ IRIaddr Parser::parseIRIaddr() {
 
         if(!peekAndCheck(0, TokenType::add) && !peekAndCheck(0, TokenType::sub) && !peekAndCheck(0, TokenType::right_bracket)) {
             //不是+ 不是- 不是]
-            errLine(peek().value());
+            errLine(peek(getPeekOffset()).value());
             std::cerr << "无效的寻址括号!!!\n在\"reg\"后出现未知内容\a\n";
             exit(-1);
         }
@@ -503,7 +551,7 @@ IRIaddr Parser::parseIRIaddr() {
                 m_index++;
 
                 if(!peekAndCheck(0, TokenType::add) && !peekAndCheck(0, TokenType::sub) && !peekAndCheck(0, TokenType::asterisk) && !peekAndCheck(1, TokenType::right_bracket)) {
-                    errLine(peek().value());
+                    errLine(peek(getPeekOffset()).value());
                     std::cerr << "无效的寻址括号!!!\n在\"reg + reg\"后出现未知内容\a\n";
                     exit(-1);
                 }
@@ -566,13 +614,13 @@ IRIaddr Parser::parseIRIaddr() {
                 }
                 m_index++;
                 if (!peekAndCheck(0, TokenType::right_bracket)) {
-                    errLine(peek().value());
+                    errLine(peek(getPeekOffset()).value());
                     std::cerr << "无效的寻址括号!!!\n\"reg +/- imm\"已经是完整格式\a\n";
                     exit(-1);
                 }
             }
             else {
-                errLine(peek().value());
+                errLine(peek(getPeekOffset()).value());
                 std::cerr << "无效的寻址括号!!!\n在\"reg +/-\"后出现未知内容\a\n";
                 exit(-1);
             }
@@ -583,13 +631,13 @@ IRIaddr Parser::parseIRIaddr() {
         ab.displacement = consume().value.value();
         ab.isNumber = true;
         if (!peekAndCheck(0, TokenType::right_bracket)) {
-            errLine(peek().value());
+            errLine(peek(getPeekOffset()).value());
             std::cerr << "无效的寻址括号!!!\n\"imm\"已经是完整格式\a\n";
             exit(-1);
         }
     }
     else {
-        errLine(peek().value());
+        errLine(peek(getPeekOffset()).value());
         std::cerr << "无效的寻址括号!!!\n在'['后出现未知内容\a\n";
         exit(-1);
     }
@@ -603,12 +651,13 @@ Value Parser::parseValue() {
 
     if (peekAndCheck(0, TokenType::ident)) {
         // 变量
-        std::string varName = consume().value.value();
+        std::string varName = peek().value().value.value();
         if (!VarMap.contains(varName)) {
-            errLine(m_tokens.at(m_index - 1));
-            std::cerr << "变量" << varName << "尚未定义 !!!\a\n";
+            errLine(m_tokens.at(m_index));
+            std::cerr << "变量" << varName << "尚未定义\a\n";
             exit(-1);
         }
+        m_index++;
         value.type = ValueType::VAR;
         value.var = VarMap.at(varName);
 
@@ -630,8 +679,8 @@ Value Parser::parseValue() {
 
         //  检查并消耗]
         if (!peekAndCheck(0, TokenType::right_bracket)) {
-            errLine(peek().value());
-            std::cerr << "期望的 ']' !!!\a\n";
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "期望的 ']'\a\n";
             exit(-1);
         }
         m_index++;
@@ -642,14 +691,15 @@ Value Parser::parseValue() {
         value.imm = consume().value.value();
     }
     else {
-        errLine(peek().value());
-        std::cerr << "出现了无效的值 !!!\a\n";
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "出现了无效的值\a\n";
         exit(-1);
     }
 
     return value;
 }
 
+// 获取值类型(去除变量类型)
 inline ValueType Parser::getValueType(Value value) const {
     if (value.type == ValueType::VAR) {
         if (!value.var.qualifier.has_value()) {
@@ -660,6 +710,11 @@ inline ValueType Parser::getValueType(Value value) const {
         }
     }
     return value.type;
+}
+
+// 获取预览偏移, 与errLine配合使用
+inline int32 Parser::getPeekOffset() const {
+    return peek().has_value() ? 0 : -1;
 }
 
 // 行号报错

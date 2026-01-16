@@ -187,6 +187,9 @@ std::string Generator::generate() const {
                 }
             }
         }
+        else if (auto assign = dynamic_cast<StmtInlineAsm*>(stat.get())) {
+            output << "\n;$inline:\n" << assign->assemblyCode << "\n;$\n\n";
+        }
     }
     
     return output.str();

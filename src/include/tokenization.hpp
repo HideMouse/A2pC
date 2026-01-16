@@ -30,6 +30,8 @@ enum TokenType {
     to,                   //条件前往的后半段引导
     test,                 //test指令
     global,               //global标志
+    ilasm,                //内联汇编
+    assembly,             //汇编内容
 
     semicolon,            //;
     left_paren,           //(
@@ -71,6 +73,7 @@ const std::unordered_map<std::string, TokenType> tokenMap = {
     {"to",     TokenType::to},
     {"test",   TokenType::test},
     {"global", TokenType::global},
+    {"asm",    TokenType::ilasm},
 
     {";",      TokenType::semicolon},
     {"(",      TokenType::left_paren},

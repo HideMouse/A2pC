@@ -25,10 +25,13 @@ PreprocessingInfo Preprocessor::preprocess() {
 
     uint32 lineIndex = 1;
     for (std::string& line : m_lines) {
-        // 删除无意义行首换行
+        // 删除行首换行
         if (line[0] == '\n') {
             line.erase(0, 1);
         }
+
+        // 删除行首多余空格
+        clearSpace(line);
 
         // 删除注释
         size_t commentPos = line.find("//");
@@ -87,8 +90,6 @@ PreprocessingInfo Preprocessor::preprocess() {
             }
             line.clear();
         }
-
-        // std::cout << "行号: " << lineIndex << ", 行内容:" << line << "\n";
         
         // 增加行号
         lineIndex++;
@@ -96,8 +97,6 @@ PreprocessingInfo Preprocessor::preprocess() {
 
     // 删除空行
     // m_lines.erase(std::remove(m_lines.begin(), m_lines.end(), ""), m_lines.end());
-
-    // std::cout << "预处理后行数: " << m_lines.size() << "行\n\n";
 
     return info;
 }

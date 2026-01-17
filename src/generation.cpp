@@ -190,6 +190,9 @@ std::string Generator::generate() const {
         else if (auto assign = dynamic_cast<StmtInlineAsm*>(stat.get())) {
             output << "\n;$inline:\n" << assign->assemblyCode << "\n;$\n\n";
         }
+        else if (auto assign = dynamic_cast<StmtSectionDef*>(stat.get())) {
+            output << "section ." << assign->sectionName << "\n";
+        }
     }
     
     return output.str();

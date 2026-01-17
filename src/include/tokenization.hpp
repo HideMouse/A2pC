@@ -30,6 +30,8 @@ enum TokenType {
     to,                   //条件前往的后半段引导
     test,                 //test指令
     global,               //global标志
+    extern_,              //extern标志
+    section,              //段
     ilasm,                //内联汇编
     assembly,             //汇编内容
 
@@ -60,42 +62,44 @@ enum TokenType {
 };
 
 const std::unordered_map<std::string, TokenType> tokenMap = {
-    {"byte",   TokenType::byte},
-    {"word",   TokenType::word},
-    {"dword",  TokenType::dword},
-    {"qword",  TokenType::qword},
+    {"byte",    TokenType::byte},
+    {"word",    TokenType::word},
+    {"dword",   TokenType::dword},
+    {"qword",   TokenType::qword},
 
-    {"reg",    TokenType::reg},
-    {"nsc",    TokenType::nsc},
+    {"reg",     TokenType::reg},
+    {"nsc",     TokenType::nsc},
 
-    {"goto",   TokenType::go_to},
-    {"if",     TokenType::cond_goto},
-    {"to",     TokenType::to},
-    {"test",   TokenType::test},
-    {"global", TokenType::global},
-    {"asm",    TokenType::ilasm},
+    {"goto",    TokenType::go_to},
+    {"if",      TokenType::cond_goto},
+    {"to",      TokenType::to},
+    {"test",    TokenType::test},
+    {"global",  TokenType::global},
+    {"extern",  TokenType::extern_},
+    {"section", TokenType::section},
+    {"asm",     TokenType::ilasm},
 
-    {";",      TokenType::semicolon},
-    {"(",      TokenType::left_paren},
-    {")",      TokenType::right_paren},
-    {"{",      TokenType::left_brace},
-    {"}",      TokenType::right_brace},
-    {"[",      TokenType::left_bracket},
-    {"]",      TokenType::right_bracket},
-    {"<",      TokenType::left_angle_bracket},
-    {">",      TokenType::right_angle_bracket},
-    {"=",      TokenType::equal},
-    {":",      TokenType::colon},
-    {"*",      TokenType::asterisk},
-    {",",      TokenType::comma},
+    {";",       TokenType::semicolon},
+    {"(",       TokenType::left_paren},
+    {")",       TokenType::right_paren},
+    {"{",       TokenType::left_brace},
+    {"}",       TokenType::right_brace},
+    {"[",       TokenType::left_bracket},
+    {"]",       TokenType::right_bracket},
+    {"<",       TokenType::left_angle_bracket},
+    {">",       TokenType::right_angle_bracket},
+    {"=",       TokenType::equal},
+    {":",       TokenType::colon},
+    {"*",       TokenType::asterisk},
+    {",",       TokenType::comma},
 
-    {"+",      TokenType::add},
-    {"-",      TokenType::sub},
+    {"+",       TokenType::add},
+    {"-",       TokenType::sub},
 
-    {"&",      TokenType::logic_and},
-    {"|",      TokenType::logic_or},
-    {"^",      TokenType::logic_xor},
-    {"~",      TokenType::logic_not},
+    {"&",       TokenType::logic_and},
+    {"|",       TokenType::logic_or},
+    {"^",       TokenType::logic_xor},
+    {"~",       TokenType::logic_not},
 };
 
 struct Token {

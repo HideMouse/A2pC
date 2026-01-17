@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
     }
 
     // 编译指令
-    std::stringstream command;
-    command << "nasm -f bin " << result.outputFile << " -o out.bin";
-    system(command.str().c_str());
+    // std::stringstream command;
+    // command << "nasm -f win64 " << result.outputFile << " -o out.obj";
+    // system(command.str().c_str());
     // system("gcc out.obj -o out.exe");
 }

@@ -16,7 +16,7 @@ class Generator {
         Generator(std::unique_ptr<Program>& root, const PreprocessingInfo& info, const ParseInfo& pInfo)
             : m_root(std::move(root)), m_info(std::move(info)) {
             global_funcs = m_root->global_funcs;
-            extern_funcs = m_info.extern_funcs;
+            extern_funcs = m_root->extern_funcs;
 
             VarUsedMap = pInfo.varUsedMap;
         }

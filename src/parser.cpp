@@ -18,10 +18,18 @@ std::unique_ptr<Program> Parser::parse() {
         if (peek().value().type == TokenType::go_to) {
             program.get()->statements.push_back(parseStmtGoto());
         }
+        else if ((peek().value().type == TokenType::extern_ &&
+                 peekAndCheck(1, TokenType::ident))) {
+            parseExtern();
+        }
         else if ((peek().value().type == TokenType::ident &&
                  peekAndCheck(1, TokenType::colon)) ||
                  peek().value().type == TokenType::global) {
             program.get()->statements.push_back(parseStmtLabel());
+        }
+        else if ((peek().value().type == TokenType::section &&
+                 peekAndCheck(1, TokenType::ident))) {
+            program.get()->statements.push_back(parseStmtSectionDef());
         }
         else if (peek().value().type == TokenType::ident ||
                  peek().value().type == TokenType::reg ||
@@ -46,6 +54,7 @@ std::unique_ptr<Program> Parser::parse() {
     }
     
     program->global_funcs = global_funcs;
+    program->extern_funcs = extern_funcs;
 
     return program;
 }
@@ -478,6 +487,82 @@ std::unique_ptr<StmtInlineAsm> Parser::parseStmtInlineAsm() {
     m_index++;
 
     return std::make_unique<StmtInlineAsm>(code);
+}
+
+std::unique_ptr<StmtSectionDef> Parser::parseStmtSectionDef() {
+    //消耗section
+    m_index++;
+
+    //检测是否已声明
+    std::string name = consume().value.value();
+    if (sectionMap.contains(name)) {
+        errLine(peek(-1).value());
+        std::cerr << "段" << name << "已被声明\a\n";
+        exit(-1);
+    }
+    //加入列表
+    sectionMap.insert(name);
+
+    //分号
+    if (!peekAndCheck(0, TokenType::semicolon)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
+        exit(-1);
+    }
+    m_index++;
+
+    return std::make_unique<StmtSectionDef>(name);
+}
+
+void Parser::parseExtern() {
+    //消耗extern
+    m_index++;
+
+    while (true) {
+        //检测是否有名称
+        if (!peekAndCheck(0, TokenType::ident)) {
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "缺失导入函数的名称\a\n";
+            exit(-1);
+        }
+        //检测是否已被导入
+        std::string name = consume().value.value();
+        if (externMap.contains(name)) {
+            errLine(peek(-1).value());
+            std::cerr << "函数" << name << "已被导入\a\n";
+            exit(-1);
+        }
+        //加入列表
+        extern_funcs.push_back(name);
+        externMap.insert(name);
+        //处理下一个
+        if (peek().has_value()) {
+            if (peek().value().type == TokenType::semicolon) {
+                break;
+            }
+            else if (peek().value().type == TokenType::comma) {
+                m_index++;
+            }
+            else {
+                errLine(peek().value());
+                std::cerr << "在处理导入函数时出现无效的Token\a\n";
+                exit(-1);
+            }
+        }
+        else {
+            errLine(peek(-1).value());
+            std::cerr << "处理导入函数时, 因无下一Token而终止\a\n";
+            exit(-1);
+        }
+    }
+
+    //分号
+    if (!peekAndCheck(0, TokenType::semicolon)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "期望的 ';'\a\n";
+        exit(-1);
+    }
+    m_index++;
 }
 
 //private:

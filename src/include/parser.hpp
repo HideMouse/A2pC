@@ -274,6 +274,14 @@ struct StmtInlineAsm : public ASTNode {
         : assemblyCode(code) {}
 };
 
+// 段定义语句
+struct StmtSectionDef : public ASTNode {
+    std::string sectionName;
+
+    StmtSectionDef(const std::string& name)
+        : sectionName(name) {}
+};
+
 // 程序根节点
 struct Program : public ASTNode {
     std::vector<std::unique_ptr<ASTNode>> statements;
@@ -299,6 +307,9 @@ class Parser {
         std::unique_ptr<StmtTest> parseStmtTest();
         std::unique_ptr<StmtVarDef> parseStmtVarDef();
         std::unique_ptr<StmtInlineAsm> parseStmtInlineAsm();
+        std::unique_ptr<StmtSectionDef> parseStmtSectionDef();
+        
+        void parseExtern();
 
     private:
         std::optional<Token> peek(uint32 offset = 0) const;
@@ -317,8 +328,12 @@ class Parser {
         uint32 m_index = 0;
 
         std::vector<std::string> global_funcs;
+        std::vector<std::string> extern_funcs;
 
     private:
         std::unordered_map<std::string, Var> VarMap;
         std::unordered_map<std::string, bool> VarUsedMap;
+
+        std::unordered_set<std::string> sectionMap;
+        std::unordered_set<std::string> externMap;
 };

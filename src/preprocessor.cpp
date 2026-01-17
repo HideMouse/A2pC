@@ -62,26 +62,6 @@ PreprocessingInfo Preprocessor::preprocess() {
                         }
                         break;
                     }
-                    case EXTERN: {
-                        while (true) {
-                            std::string func = line.substr(0, line.find_first_of(", \0"));
-                            info.extern_funcs.push_back(func);
-                            line.erase(0, func.size());
-                            clearSpace(line);
-                            if (line[0] == '\0') {
-                                break;
-                            }
-                            else if (line[0] == ',') {
-                                line.erase(0, 1);
-                                clearSpace(line);
-                            }
-                            else {
-                                std::cout << "line: " << lineIndex << "\n  未知的符号.\n\a";
-                                exit(-1);
-                            }
-                        }
-                        break;
-                    }
                 }
             }
             else {

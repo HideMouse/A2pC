@@ -16,8 +16,6 @@ enum FirstArgType {
 const std::unordered_map<std::string, FirstArgType> firstArgMap = {
     {"bits",     FirstArgType::BITS},
     {"BITS",     FirstArgType::BITS},
-    {"extern",   FirstArgType::EXTERN},
-    {"EXTERN",   FirstArgType::EXTERN},
 };
 
 // 位宽类型无序表
@@ -29,7 +27,6 @@ const std::unordered_set<std::string> bitsTypeSet = {
 
 struct PreprocessingInfo {
     std::string bits;
-    std::vector<std::string> extern_funcs;
 };
 
 class Preprocessor {

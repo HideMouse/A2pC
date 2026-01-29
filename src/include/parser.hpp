@@ -167,6 +167,8 @@ struct IRIaddr {
 // 变量修饰类型
 enum VarQualifierType {
     NSC,        // Not Stored Const 不储存的常量
+    
+    NONE,       // 无修饰
 };
 
 // 变量修饰类型表

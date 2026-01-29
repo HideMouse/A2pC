@@ -1,7 +1,10 @@
 #include "tokenization.hpp"
 
 bool isNumberChar(char c);
+bool isIdentFirstChar(char c);
+bool isIdentChar(char c);
 bool isAvailableNumber(const std::string& num);
+void numberErrorNote(const std::string& num);
 
 //public:
 
@@ -17,8 +20,10 @@ std::vector<Token> Tokenizer::tokenize() {
             lineIndex++;
         }
 
-        if (std::isalpha(peek().value())) {
-            while (peek().has_value() && std::isalnum(peek().value())) {
+        if (isIdentFirstChar(peek().value())) {
+            buffer.push_back(consume());
+
+            while (peek().has_value() && isIdentChar(peek().value())) {
                 buffer.push_back(consume());
             }
 
@@ -39,8 +44,10 @@ std::vector<Token> Tokenizer::tokenize() {
             }
 
             if (!isAvailableNumber(buffer)) {
-                std::cerr << "line: " << lineIndex << "\n  ";
-                std::cerr << buffer << "并不是数字\a\n";
+                std::cerr << "At line:" << lineIndex << "\n  ";
+                std::cerr << "When: tokenizing\n  Error:\n    \"";
+                std::cerr << buffer << "\" is not a number\a\n";
+                numberErrorNote(buffer);
                 exit(-1);
             }
 
@@ -48,11 +55,11 @@ std::vector<Token> Tokenizer::tokenize() {
             buffer.clear();
             continue;
         }
-        else if (peek().value() == '$') {
-            // 提前消耗一个, 避免检测到初始的$
+        else if (peek().value() == '@') {
+            // 提前消耗一个, 避免检测到初始的@
             buffer.push_back(consume());
 
-            while (peek().has_value() && peek().value() != '$') {
+            while (peek().has_value() && peek().value() != '@') {
                 if (peek().value() == '\n') {
                     lineIndex++;
                 }
@@ -60,8 +67,9 @@ std::vector<Token> Tokenizer::tokenize() {
             }
 
             if (!peek().has_value()) {
-                std::cerr << "line: " << lineIndex << "\n  ";
-                std::cerr << "内联汇编代码缺失结束处的 '$'\a\n";
+                std::cerr << "At line:" << lineIndex << "\n  ";
+                std::cerr << "When: tokenizing\n  Error:\n    ";
+                std::cerr << "Unclosed '@' on inline assembly code.\a\n";
                 exit(-1);
             }
 
@@ -81,8 +89,9 @@ std::vector<Token> Tokenizer::tokenize() {
             continue;
         }
         else {
-            std::cerr << "line: " << lineIndex << "\n  ";
-            std::cerr << "意外的标记\a\n";
+            std::cerr << "At line:" << lineIndex << "\n  ";
+            std::cerr << "When: tokenizing\n  Error:\n    ";
+            std::cerr << "Unexpected token\a\n";
             exit(-1);
         }
     }
@@ -116,6 +125,21 @@ bool isNumberChar(char c) {
             '0' <= c && c <= '9' ||
             c == 'H' || c == 'h' ||
             c == 'x';
+}
+
+// 是否为标识符首字符
+bool isIdentFirstChar(char c) {
+    return  ('A' <= c && c <= 'Z') ||
+            ('a' <= c && c <= 'z') ||
+            c == '_' || c == '.';
+}
+
+// 是否为标识符字符
+bool isIdentChar(char c) {
+    return  ('A' <= c && c <= 'Z') ||
+            ('a' <= c && c <= 'z') ||
+            ('0' <= c && c <= '9') ||
+            c == '_';
 }
 
 // 是否为可用数字
@@ -162,4 +186,16 @@ bool isAvailableNumber(const std::string& num) {
     }
     
     return true;
+}
+
+// 数字报错
+void numberErrorNote(const std::string& num) {
+    // 拥有16进制专属字符
+    if (num.find_first_of("abcdefABCDEF") != std::string::npos) {
+        // 但没有16进制前后缀
+        if (num.find_first_of("Hhx") == std::string::npos) {
+            std::cerr << "  Note:\n    It seems to be \"0x" << num << "\" or \"" << num << "H\"\n";
+            return;
+        }
+    }
 }

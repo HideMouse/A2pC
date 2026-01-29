@@ -51,13 +51,19 @@ PreprocessingInfo Preprocessor::preprocess() {
                     case BITS: {
                         std::string bits = line.substr(0, line.find_first_of(" \0"));
                         if (!bitsTypeSet.contains(bits)) {
-                            std::cout << "line: " << lineIndex << "\n  未知的位宽大小或缺少该参数\"" << bits << "\".\n\a";
+                            std::cerr << "At line:" << lineIndex << "\n  ";
+                            std::cerr << "When: preprocessing\n  Error:\n    ";
+                            std::cerr << "Unknown bit width \"" << bits << "\" or missing this argument.\a\n  ";
+                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64";
                             exit(-1);
                         }
                         info.bits = bits;
                         line.erase(0, bits.size());
                         if (line.find_last_not_of(" \0") != std::string::npos) {
-                            std::cout << "line: " << lineIndex << "\n  错误的参数数量, 应为1.\n\a";
+                            std::cerr << "At line:" << lineIndex << "\n  ";
+                            std::cerr << "When: preprocessing\n  Error:\n    ";
+                            std::cerr << "Wrong number of arguments\a\n  ";
+                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64";
                             exit(-1);
                         }
                         break;
@@ -65,7 +71,9 @@ PreprocessingInfo Preprocessor::preprocess() {
                 }
             }
             else {
-                std::cout << "line: " << lineIndex << "\n  未知的预处理指令\"" << firstArg << "\".\n\a";
+                std::cerr << "At line:" << lineIndex << "\n  ";
+                std::cerr << "When: preprocessing\n  Error:\n    ";
+                std::cerr << "Unknown preprocess command \"" << firstArg << "\"\a\n";
                 exit(-1);
             }
             line.clear();

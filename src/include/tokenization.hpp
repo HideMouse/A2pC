@@ -62,10 +62,21 @@ enum TokenType {
 };
 
 const std::unordered_map<std::string, TokenType> tokenMap = {
+    // Asm风格
     {"byte",    TokenType::byte},
     {"word",    TokenType::word},
     {"dword",   TokenType::dword},
     {"qword",   TokenType::qword},
+    // C++风格:
+    {"uint8",    TokenType::byte},
+    {"uint16",    TokenType::word},
+    {"uint32",   TokenType::dword},
+    {"uint64",   TokenType::qword},
+    // Rust风格:
+    {"u8",    TokenType::byte},
+    {"u16",    TokenType::word},
+    {"u32",   TokenType::dword},
+    {"u64",   TokenType::qword},
 
     {"reg",     TokenType::reg},
     {"nsc",     TokenType::nsc},

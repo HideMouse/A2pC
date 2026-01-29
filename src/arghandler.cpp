@@ -44,7 +44,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 exit(0);
                 break;
             case ArgType::VERSION:
-                std::cout << "A2pC v0.4.0 for Windows\n";
+                std::cout << "A2pC v0.4.6 for Windows\n";
                 std::cout << "Built with MinGW-W64 G++.\n";
                 exit(0);
                 break;

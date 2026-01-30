@@ -16,7 +16,9 @@ int main(int argc, char* argv[]) {
         std::stringstream ss;
         std::fstream input(result.srcFile, std::ios::in);
         if (!input.is_open()) {
-            std::cerr << "无法打开源代码文件\a\n";
+            std::cerr << "When: main processing\nError:\n  ";
+            std::cerr << "Cannot open source file\a\n";
+            std::cerr << "Note:\n  Path may be invalid or A2pC has no access permission.";
             return -1;
         }
 
@@ -43,7 +45,9 @@ int main(int argc, char* argv[]) {
     {
         std::fstream output(result.outputFile, std::ios::out);
         if (!output.is_open()) {
-            std::cerr << "无法打开输出文件\a\n";
+            std::cerr << "When: main processing\nError:\n  ";
+            std::cerr << "Cannot open output file\a\n";
+            std::cerr << "Note:\n  Path may be invalid or A2pC has no access permission.";
             return -1;
         }
         output << generator.generate();

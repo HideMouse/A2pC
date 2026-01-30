@@ -66,7 +66,8 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     if (getValueType(lV) == IMM) {
         errLine(peek(getPeekOffset() - 1).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid left value\a\n";
+        std::cerr << "Invalid left value\a\n  ";
+        std::cerr << "Note:\n    It cannot be a number";
         exit(-1);
     }
 
@@ -136,6 +137,24 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
         
         //  解析右值:
         rV = parseValue();
+        // 检查右值
+        if ((type == AssiType::SHL || type == AssiType::SHR) &&
+             getValueType(rV) != IMM) {
+            // 为左右移 -> 右值不得为数值
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "When: parsing\n  Error:\n    ";
+            std::cerr << "Non-number value for <<=/>>= right value\a\n  ";
+            std::cerr << "Note:\n    <<=/>>= right value can only be number.";
+            exit(-1);
+        }
+        if (getValueType(lV) == MEM && getValueType(rV) == MEM) {
+            // 左右值不得同时为内存
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "When: parsing\n  Error:\n    ";
+            std::cerr << "Left value and right value are both memory\a\n  ";
+            std::cerr << "Note:\n    Value on two side cannot both be memory.";
+            exit(-1);
+        }
     }
 
     // 检查并消耗;

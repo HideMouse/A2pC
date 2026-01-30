@@ -35,59 +35,27 @@ std::string Generator::generate() const {
             // 生成赋值类型
             switch (assign->assiType) {
                 case MOV:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "mov ";
                     break;
                 case ADD:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "+=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "add ";
                     break;
                 case SUB:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "-=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "sub ";
                     break;
                 case AND:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "&=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "and ";
                     break;
                 case OR:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "|=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "or ";
                     break;
                 case XOR:
-                    if (lVT == ValueType::MEM && rVT == ValueType::MEM) {
-                        std::cerr << "^=两侧不能同时为内存\a\n";
-                        exit(-1);
-                    }
                     output << "xor ";
                     break;
                 case SHL:
-                    if (rVT != ValueType::IMM) {
-                        std::cerr << "<<=右侧只能为数值\a\n";
-                        exit(-1);
-                    }
                     output << "shl ";
                     break;
                 case SHR:
-                    if (rVT != ValueType::IMM) {
-                        std::cerr << ">>=右侧只能为数值\a\n";
-                        exit(-1);
-                    }
                     output << "shr ";
                     break;
                 case INC:

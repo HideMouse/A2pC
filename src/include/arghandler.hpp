@@ -7,6 +7,11 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+// 版本信息宏
+#define A2PC_VERSION   "A2pC v0.4.8 for Windows"
+#define A2PC_COMPILER  "MinGW-W64 G++ 15.2.0"
+#define A2PC_BUILD_ENV "Windows 11 25H2"
+
 enum ArgType {
     HELP,        // 帮助
     VERSION,     // 版本
@@ -15,8 +20,17 @@ enum ArgType {
 };
 
 const std::unordered_map<std::string, ArgType> ArgMap = {
+    // 列出全部选项
     {"--help",     ArgType::HELP},
+    {"-help",      ArgType::HELP},
+    {"--h",         ArgType::HELP},
+    {"-h",         ArgType::HELP},
+
+    // 输出版本信息
     {"--version",  ArgType::VERSION},
+    {"-version",   ArgType::VERSION},
+    {"--v",        ArgType::VERSION},
+    {"-v",         ArgType::VERSION},
     {"-o",         ArgType::OUPUT_FILE},
 };
 

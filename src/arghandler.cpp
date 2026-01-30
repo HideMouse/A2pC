@@ -17,11 +17,14 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
         // 是路径? -> 源文件
         if (!ArgMap.contains(arg)) {
             if (!isFileExists(arg)) {
-                std::cerr << "未知的参数: " << arg << "\a\n";
+                std::cerr << "When: handling options\nError:\n  ";
+                std::cerr << "Unknown Option \"" << arg << "\"\a\n";
                 exit(-1);
             }
             else if (srcFile.has_value()) {
-                std::cerr << "过多的源代码文件\n应为1个, 实为2个\a\n";
+                std::cerr << "When: handling options\nError:\n  ";
+                std::cerr << "Too many source file\a\n";
+                std::cerr << "Note:\n  There should be only one source file.";
                 exit(-1);
             }
             else {
@@ -33,25 +36,31 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
         // 正常参数:
         switch (ArgMap.at(arg)) {
             case ArgType::HELP:
-                std::cout << "选项:\n";
-                std::cout << "  --help     获取帮助\n";
-                std::cout << "  --version  查看当前的A2pC版本号\n";
-                std::cout << "  <file>     在<file>中填入源代码文件\n";
-                std::cout << "  -o <file>  在<file>中填入输出文件\n";
+                std::cout << "Options:\n";
+                std::cout << "  --help      List all options (also -help/--h/-h)\n";
+                std::cout << "  --version   Display A2pC version information (also -version/--v/-v)\n";
+                std::cout << "  <file>      Read source code from <file>\n";
+                std::cout << "  -o <file>   Write output code to <file> (defaults to out.asm)\n";
                 std::cout << "\n";
-                std::cout << "有关更多信息, 请前往:\n";
-                std::cout << "<https://github.com/HideMouse>\n";
+                std::cout << "For more information, please see:\n";
+                std::cout << "  <https://github.com/HideMouse>.\n";
                 exit(0);
                 break;
             case ArgType::VERSION:
-                std::cout << "A2pC v0.4.6 for Windows\n";
-                std::cout << "Built with MinGW-W64 G++.\n";
+                std::cout << "Version:\n  ";
+                std::cout << A2PC_VERSION   << "\n";
+                std::cout << "Compiler:\n  ";
+                std::cout << A2PC_COMPILER  << "\n";
+                std::cout << "Build Environment:\n  ";
+                std::cout << A2PC_BUILD_ENV << "\n";
                 exit(0);
                 break;
             case ArgType::OUPUT_FILE:
                 if (i + 1 < argc) {
                     if (outFile.has_value()) {
-                        std::cerr << "过多的输出文件\n应为1个, 实为2个\a\n";
+                        std::cerr << "When: handling options\nError:\n  ";
+                        std::cerr << "Too many output file\a\n";
+                        std::cerr << "Note:\n  There should be only one output file.";
                         exit(-1);
                     }
                     else {
@@ -60,7 +69,8 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                     }
                 }
                 else {
-                    std::cerr << "-o后缺失文件路径\a\n";
+                    std::cerr << "When: handling options\nError:\n  ";
+                    std::cerr << "Missing the output file path after -o\a\n";
                     exit(-1);
                 }
                 break;
@@ -68,7 +78,8 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
     }
 
     if (!srcFile.has_value()) {
-        std::cerr << "未指定源文件路径\n编译终止\a\n";
+        std::cerr << "When: handling options\nError:\n  ";
+        std::cerr << "Source file path not specified\a\n";
         exit(-1);
     }
     result.srcFile = srcFile.value();

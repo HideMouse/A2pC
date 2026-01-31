@@ -8,7 +8,7 @@
 namespace fs = std::filesystem;
 
 // 版本信息宏
-#define A2PC_VERSION   "A2pC v0.4.8 for Windows"
+#define A2PC_VERSION   "A2pC v0.5.0 for Windows"
 #define A2PC_COMPILER  "MinGW-W64 G++ 15.2.0"
 #define A2PC_BUILD_ENV "Windows 11 25H2"
 

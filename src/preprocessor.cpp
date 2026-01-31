@@ -53,8 +53,8 @@ PreprocessingInfo Preprocessor::preprocess() {
                         if (!bitsTypeSet.contains(bits)) {
                             std::cerr << "At line:" << lineIndex << "\n  ";
                             std::cerr << "When: preprocessing\n  Error:\n    ";
-                            std::cerr << "Unknown bit width \"" << bits << "\" or missing this argument.\a\n  ";
-                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64";
+                            std::cerr << "Unknown bit width \"" << bits << "\" or missing this argument\a\n  ";
+                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
                             exit(-1);
                         }
                         info.bits = bits;
@@ -63,7 +63,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                             std::cerr << "At line:" << lineIndex << "\n  ";
                             std::cerr << "When: preprocessing\n  Error:\n    ";
                             std::cerr << "Wrong number of arguments\a\n  ";
-                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64";
+                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
                             exit(-1);
                         }
                         break;

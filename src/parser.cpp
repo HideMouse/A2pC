@@ -73,12 +73,12 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
 
     //解析赋值类型:
     AssiType type;
-    std::string assiStr;
+    std::string assiStr = "";
     while (assiStr.length() <= 3 && !AssiMap.contains(assiStr)) {
         if (!peek().has_value()) {
             errLine(peek(-1).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Parsed an invalid assignment type because of no value after here\a\n";
+            std::cerr << "No Token After\a\n";
             exit(-1);
         }
 
@@ -97,14 +97,14 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     type = AssiMap.at(assiStr);
 
     Value rV;
-    uint8 size = 0;
+    uint8 size = 0xFF;
     // 是不是INC或DEC
     if (type == AssiType::INC || type == AssiType::DEC) {
         // 是 -> 没有右值
         if (!peekAndCheck(0, TokenType::semicolon)) {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "++/-- is no need right value\a\n  ";
+            std::cerr << "++/-- no need right value\a\n  ";
             std::cerr << "Note:\n    ++/-- use implicit right value";
             exit(-1);
         }
@@ -121,7 +121,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
             if (!peek().has_value() || !(peek().value().type < 4)) {
                 errLine(peek(getPeekOffset()).value());
                 std::cerr << "When: parsing\n  Error:\n    ";
-                std::cerr << "Missing a address size inside the parentheses\a\n";
+                std::cerr << "Missing an address size inside the parentheses\a\n";
                 exit(-1);
             }
             size = peek().value().type;
@@ -144,15 +144,15 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
             std::cerr << "Non-number value for <<=/>>= right value\a\n  ";
-            std::cerr << "Note:\n    <<=/>>= right value can only be number.";
+            std::cerr << "Note:\n    <<=/>>= right value can only be a number.";
             exit(-1);
         }
         if (getValueType(lV) == MEM && getValueType(rV) == MEM) {
             // 左右值不得同时为内存
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Left value and right value are both memory\a\n  ";
-            std::cerr << "Note:\n    Value on two side cannot both be memory.";
+            std::cerr << "Left value and right value are both memory addresses\a\n  ";
+            std::cerr << "Note:\n    Value on two side cannot both be memory addresses.";
             exit(-1);
         }
     }
@@ -399,8 +399,8 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         if (!peekAndCheck(0, TokenType::imm)) {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Assign non numeric value to variables " << var.name << " with NSC qualifier\a\n  ";
-            std::cerr << "Note:\n    Variables with NSC qualifier can only be assigned numerical value";
+            std::cerr << "Assign non-numeric value to the variable " << var.name << " with NSC qualifier\a\n  ";
+            std::cerr << "Note:\n    Variables with NSC qualifier can only be assigned to numerical value.";
             exit(-1);
         }
         vq.imm = consume().value.value();
@@ -421,6 +421,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
 
         return std::make_unique<StmtVarDef>(var, vq.imm);
     }
+    var.qualifier = vq;
 
     // 为正常变量时
     //  左括号
@@ -446,19 +447,19 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         if (var.loc.reg.size < var.size) {
             errLine(peek(-1).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Register " << var.loc.reg.name << " cannot store variable " << var.name << "\a\n";
+            std::cerr << "Register " << var.loc.reg.name << " cannot store the variable " << var.name << "\a\n";
             exit(-1);
         }
         else if (var.loc.reg.size > var.size) {
             std::cerr << "At line:" << peek(-1).value().lineIndex << "\n  ";
             std::cout << "When: parsing\n  Warning:\n    ";
-            std::cout << "Register " << var.loc.reg.name << " is too large for variable " << var.name << "\n";
+            std::cout << "Register " << var.loc.reg.name << " is too large for the variable " << var.name << "\n";
         }
     }
     else {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid store location for variable " << var.name << "\a\n";
+        std::cerr << "Invalid store location for the variable " << var.name << "\a\n";
         exit(-1);
     }
     
@@ -489,7 +490,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
         if (!peekAndCheck(0, TokenType::imm)) {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Invalid assignment for variable " << var.name << "\a\n";
+            std::cerr << "Invalid assignment for the variable " << var.name << "\a\n";
             exit(-1);
         }
         std::string value = consume().value.value();
@@ -508,7 +509,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     else {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "After declaring the variable " << var.name << ", neither end the line nor assign a value\a\n";
+        std::cerr << "After declaring the variable " << var.name << ", neither terminate the line nor assign a value\a\n";
         exit(-1);
     }
 }
@@ -521,7 +522,7 @@ std::unique_ptr<StmtInlineAsm> Parser::parseStmtInlineAsm() {
     if (!peekAndCheck(0, TokenType::assembly)) {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Missing inline assembly code after \"asm\"\a\n";
+        std::cerr << "Missing the inline assembly code after \"asm\"\a\n";
         exit(-1);
     }
     std::string code = consume().value.value();
@@ -590,7 +591,7 @@ void Parser::parseExtern() {
         if (!peekAndCheck(0, TokenType::ident)) {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Missing extern function's name\a\n";
+            std::cerr << "Missing the extern function's name\a\n";
             exit(-1);
         }
         //检测是否已被导入
@@ -598,7 +599,7 @@ void Parser::parseExtern() {
         if (externMap.contains(name)) {
             errLine(peek(-1).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Function " << name << " has been externed\a\n";
+            std::cerr << "Function " << name << " has been imported\a\n";
             exit(-1);
         }
         //加入列表
@@ -622,7 +623,7 @@ void Parser::parseExtern() {
         else {
             errLine(peek(-1).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "No Token after here\a\n";
+            std::cerr << "No Token After\a\n";
             exit(-1);
         }
     }
@@ -666,7 +667,7 @@ Register Parser::parseRegister() {
     if (!peekAndCheck(0, TokenType::colon) || !peekAndCheck(1, TokenType::colon)) {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Missing a \"::\" !\a\n";
+        std::cerr << "Missing a \"::\"\a\n";
         exit(-1);
     }
     m_index += 2;
@@ -688,131 +689,389 @@ Register Parser::parseRegister() {
     return RegMap.at(peek().value().value.value());
 }
 
-// 解析寻址括号
-IRIaddr Parser::parseIRIaddr() {
-    IRIaddr ab;
+// 解析内存地址
+std::string Parser::parseMemAddr() {
+    std::string memAddr = "";
 
-    if (peekAndCheck(0, TokenType::reg)) {
-        //reg
-        ab.base = parseRegister().name;
-        m_index++;
+    Value v1 = parseValue();
 
-        if(!peekAndCheck(0, TokenType::add) && !peekAndCheck(0, TokenType::sub) && !peekAndCheck(0, TokenType::right_bracket)) {
-            //不是+ 不是- 不是]
-            errLine(peek(getPeekOffset()).value());
-            std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "无效的寻址括号!!!\n在\"reg\"后出现未知内容\a\n";
-            exit(-1);
-        }
-        else if (!peekAndCheck(0, TokenType::right_bracket)){
-            m_index++;
-            if (peekAndCheck(0, TokenType::reg)) {
-                //reg + reg
-                ab.index = parseRegister().name;
+    // 为寄存器
+    if (getValueType(v1) == REG) {
+        // reg
+        memAddr.append(valueToStr(v1));
+
+        if (peek().has_value()) {
+            // *
+            if (peek().value().type == TokenType::asterisk) {
                 m_index++;
 
-                if(!peekAndCheck(0, TokenType::add) && !peekAndCheck(0, TokenType::sub) && !peekAndCheck(0, TokenType::asterisk) && !peekAndCheck(1, TokenType::right_bracket)) {
-                    errLine(peek(getPeekOffset()).value());
-                    std::cerr << "When: parsing\n  Error:\n    ";
-                    std::cerr << "无效的寻址括号!!!\n在\"reg + reg\"后出现未知内容\a\n";
-                    exit(-1);
-                }
-                else if (peekAndCheck(1, TokenType::imm)) {
-                    if (peekAndCheck(0, TokenType::add)) {
-                        //reg + reg + imm
-                        ab.displacement = "+" + peek(1).value().value.value();
-                    }
-                    else if (peekAndCheck(0, TokenType::sub)) {
-                        //reg + reg - imm
-                        ab.displacement = "-" + peek(1).value().value.value();
-                    }
-                    else if (peekAndCheck(0, TokenType::asterisk)) {
-                        //reg + reg * imm
-                        ab.scale = peek(1).value().value.value();
-                        if (ab.scale != "1" && ab.scale != "2" && ab.scale != "4" && ab.scale != "8") {
-                            errLine(peek(1).value());
+                Value v2 = parseValue();
+
+                // 为数值
+                if (getValueType(v2) == IMM) {
+                    if (strcmp(valueToStr(v2).c_str(), "1") == 0 ||
+                        strcmp(valueToStr(v2).c_str(), "2") == 0 ||
+                        strcmp(valueToStr(v2).c_str(), "4") == 0 ||
+                        strcmp(valueToStr(v2).c_str(), "8") == 0) {
+                        // reg * imm
+                        memAddr.append(" * ");
+                        memAddr.append(valueToStr(v2));
+
+                        if (peek().has_value()) {
+                            // +
+                            if (peek().value().type == TokenType::add) {
+                                m_index++;
+
+                                Value v3 = parseValue();
+
+                                // 为数值
+                                if (getValueType(v3) == IMM) {
+                                    // reg * imm + imm (完整!)
+                                    memAddr.append(" + ");
+                                    memAddr.append(valueToStr(v3));
+
+                                    return memAddr;
+                                }
+                                // 不是数值
+                                else {
+                                    errLine(peek(getPeekOffset()).value());
+                                    std::cerr << "When: parsing\n  Error:\n    ";
+                                    std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                    std::cerr << "Note:\n    Should only have a number after \"reg * imm +\".";
+                                    exit(-1);
+                                }
+                            }
+                            // -
+                            else if (peek().value().type == TokenType::sub) {
+                                m_index++;
+
+                                Value v3 = parseValue();
+
+                                // 为数值
+                                if (getValueType(v3) == IMM) {
+                                    // reg * imm - imm (完整!)
+                                    memAddr.append(" - ");
+                                    memAddr.append(valueToStr(v3));
+
+                                    return memAddr;
+                                }
+                                // 不是数值
+                                else {
+                                    errLine(peek(getPeekOffset()).value());
+                                    std::cerr << "When: parsing\n  Error:\n    ";
+                                    std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                    std::cerr << "Note:\n    Should only have a number after \"reg * imm -\".";
+                                    exit(-1);
+                                }
+                            }
+                            // 其它
+                            else {
+                                errLine(peek().value());
+                                std::cerr << "When: parsing\n  Error:\n    ";
+                                std::cerr << "Invalid Memory Address (Unknown Token)\a\n  ";
+                                std::cerr << "Note:\n    Should only have +/- after \"reg * imm\".";
+                                exit(-1);
+                            }
+                        }
+                        else {
+                            errLine(peek().value());
                             std::cerr << "When: parsing\n  Error:\n    ";
-                            std::cerr << "无效的比例因子!!!\n应为1,2,4,8中一个\a\n";
+                            std::cerr << "Invalid Memory Address (No Token After)\a\n  ";
+                            std::cerr << "Note:\n    No Token after \"reg + reg * imm\".";
                             exit(-1);
                         }
                     }
-                    m_index += 2;
-                    if(!peekAndCheck(0, TokenType::add) && !peekAndCheck(0, TokenType::sub) && !peekAndCheck(0, TokenType::right_bracket)) {
+                    else {
                         errLine(peek().value());
                         std::cerr << "When: parsing\n  Error:\n    ";
-                        std::cerr << "无效的寻址括号!!!\n在\"reg + reg * imm\"后出现未知内容\a\n";
-                        exit(-1);
-                    }
-                    
-                    if (peekAndCheck(1, TokenType::imm)) {
-                        if (peekAndCheck(0, TokenType::add)) {
-                            //reg + reg * imm + imm
-                            ab.displacement = "+" + peek(1).value().value.value();
-                        }
-                        else if (peekAndCheck(0, TokenType::sub)) {
-                            //reg + reg * imm - imm
-                            ab.displacement = "-" + peek(1).value().value.value();
-                        }
-                        m_index += 2;
-                    }
-                    else if (!peekAndCheck(0, TokenType::right_bracket)) {
-                        errLine(peek().value());
-                        std::cerr << "When: parsing\n  Error:\n    ";
-                        std::cerr << "无效的寻址括号!!!\n\"reg + reg * imm +/- imm\"已经是完整格式\a\n";
+                        std::cerr << "Invalid Memory Address (Wrong Value)\a\n  ";
+                        std::cerr << "Note:\n    Scale can only be 1/2/4/8 or none.";
                         exit(-1);
                     }
                 }
+                // 不是数值
                 else {
-                    errLine(peek().value());
-                    std::cerr << "When: parsing\n  Error:\n    ";
-                    std::cerr << "无效的寻址括号!!!\n在\"reg + reg +/-/*\"后出现未知内容\a\n";
-                    exit(-1);
-                }
-            }
-            else if (peekAndCheck(0, TokenType::imm)) {
-                if (peekAndCheck(-1, TokenType::add)) {
-                    //reg + imm
-                    ab.displacement = "+" + peek().value().value.value();
-                }
-                else if (peekAndCheck(-1, TokenType::sub)) {
-                    //reg - imm
-                    ab.displacement = "-" + peek().value().value.value();
-                }
-                m_index++;
-                if (!peekAndCheck(0, TokenType::right_bracket)) {
                     errLine(peek(getPeekOffset()).value());
                     std::cerr << "When: parsing\n  Error:\n    ";
-                    std::cerr << "无效的寻址括号!!!\n\"reg +/- imm\"已经是完整格式\a\n";
+                    std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                    std::cerr << "Note:\n    Scale can only be a number.";
                     exit(-1);
                 }
             }
+            // +
+            else if (peek().value().type == TokenType::add) {
+                m_index++;
+
+                Value v2 = parseValue();
+
+                // 为寄存器
+                if (getValueType(v2) == REG) {
+                    // 禁用rsp用于索引
+                    if (strcmp(valueToStr(v2).c_str(), "rsp") == 0 ||
+                        strcmp(valueToStr(v2).c_str(), "esp") == 0 ||
+                        strcmp(valueToStr(v2).c_str(), "sp") == 0) {
+                        errLine(peek(getPeekOffset()).value());
+                        std::cerr << "When: parsing\n  Error:\n    ";
+                        std::cerr << "Invalid Memory Address (Wrong Value)\a\n  ";
+                        std::cerr << "Note:\n    Index cannot be rsp/esp/sp.";
+                        exit(-1);
+                    }
+
+                    // reg + reg
+                    memAddr.append(" + ");
+                    memAddr.append(valueToStr(v2));
+
+                    if (peek().has_value()) {
+                        // *
+                        if (peek().value().type == TokenType::asterisk) {
+                            m_index++;
+
+                            Value v3 = parseValue();
+
+                            // 为数值
+                            if (getValueType(v3) == IMM) {
+                                if (strcmp(valueToStr(v3).c_str(), "1") == 0 ||
+                                    strcmp(valueToStr(v3).c_str(), "2") == 0 ||
+                                    strcmp(valueToStr(v3).c_str(), "4") == 0 ||
+                                    strcmp(valueToStr(v3).c_str(), "8") == 0) {
+                                    // reg + reg * imm
+                                    memAddr.append(" * ");
+                                    memAddr.append(valueToStr(v3));
+
+                                    if (peek().has_value()) {
+                                        // +
+                                        if (peek().value().type == TokenType::add) {
+                                            m_index++;
+
+                                            Value v4 = parseValue();
+
+                                            // 为数值
+                                            if (getValueType(v4) == IMM) {
+                                                // reg + reg * imm + imm (完整!)
+                                                memAddr.append(" + ");
+                                                memAddr.append(valueToStr(v4));
+
+                                                return memAddr;
+                                            }
+                                            // 不是数值
+                                            else {
+                                                errLine(peek(getPeekOffset()).value());
+                                                std::cerr << "When: parsing\n  Error:\n    ";
+                                                std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                                std::cerr << "Note:\n    Should only have a number after \"reg + reg * imm +\".";
+                                                exit(-1);
+                                            }
+                                        }
+                                        // -
+                                        else if (peek().value().type == TokenType::sub) {
+                                            m_index++;
+
+                                            Value v4 = parseValue();
+
+                                            // 为数值
+                                            if (getValueType(v4) == IMM) {
+                                                // reg + reg * imm - imm (完整!)
+                                                memAddr.append(" - ");
+                                                memAddr.append(valueToStr(v4));
+
+                                                return memAddr;
+                                            }
+                                            // 不是数值
+                                            else {
+                                                errLine(peek(getPeekOffset()).value());
+                                                std::cerr << "When: parsing\n  Error:\n    ";
+                                                std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                                std::cerr << "Note:\n    Should only have a number after \"reg + reg * imm -\".";
+                                                exit(-1);
+                                            }
+                                        }
+                                        // ]
+                                        else if (peek().value().type == TokenType::right_bracket) {
+                                            // reg + reg * imm (完整!)
+                                            return memAddr;
+                                        }
+                                        // 其它
+                                        else {
+                                            errLine(peek().value());
+                                            std::cerr << "When: parsing\n  Error:\n    ";
+                                            std::cerr << "Invalid Memory Address (Unknown Token)\a\n  ";
+                                            std::cerr << "Note:\n    Should only have +/- after \"reg + reg * imm\" or terminate this address.";
+                                            exit(-1);
+                                        }
+                                    }
+                                    else {
+                                        errLine(peek().value());
+                                        std::cerr << "When: parsing\n  Error:\n    ";
+                                        std::cerr << "Invalid Memory Address (No Token After)\a\n  ";
+                                        std::cerr << "Note:\n    No Token after \"reg + reg * imm\".";
+                                        exit(-1);
+                                    }
+                                }
+                                else {
+                                    errLine(peek().value());
+                                    std::cerr << "When: parsing\n  Error:\n    ";
+                                    std::cerr << "Invalid Memory Address (Wrong Value)\a\n  ";
+                                    std::cerr << "Note:\n    Scale can only be 1/2/4/8 or none.";
+                                    exit(-1);
+                                }
+                            }
+                            // 不是数值
+                            else {
+                                errLine(peek(getPeekOffset()).value());
+                                std::cerr << "When: parsing\n  Error:\n    ";
+                                std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                std::cerr << "Note:\n    Scale can only be a number.";
+                                exit(-1);
+                            }
+                        }
+                        // +
+                        else if (peek().value().type == TokenType::add) {
+                            m_index++;
+
+                            Value v4 = parseValue();
+
+                            // 为数值
+                            if (getValueType(v4) == IMM) {
+                                // reg + reg + imm (完整!)
+                                memAddr.append(" + ");
+                                memAddr.append(valueToStr(v4));
+
+                                return memAddr;
+                            }
+                            // 不是数值
+                            else {
+                                errLine(peek(getPeekOffset()).value());
+                                std::cerr << "When: parsing\n  Error:\n    ";
+                                std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                std::cerr << "Note:\n    Should only have a number after \"reg + reg +\".";
+                                exit(-1);
+                            }
+                        }
+                        // -
+                        else if (peek().value().type == TokenType::sub) {
+                            m_index++;
+
+                            Value v4 = parseValue();
+
+                            // 为数值
+                            if (getValueType(v4) == IMM) {
+                                // reg + reg - imm (完整!)
+                                memAddr.append(" - ");
+                                memAddr.append(valueToStr(v4));
+
+                                return memAddr;
+                            }
+                            // 不是数值
+                            else {
+                                errLine(peek(getPeekOffset()).value());
+                                std::cerr << "When: parsing\n  Error:\n    ";
+                                std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                                std::cerr << "Note:\n    Should only have a number after \"reg + reg -\".";
+                                exit(-1);
+                            }
+                        }
+                        // ]
+                        else if (peek().value().type == TokenType::right_bracket) {
+                            // reg + reg (完整!)
+                            return memAddr;
+                        }
+                        // 其它
+                        else {
+                            errLine(peek().value());
+                            std::cerr << "When: parsing\n  Error:\n    ";
+                            std::cerr << "Invalid Memory Address (Unknown Token)\a\n  ";
+                            std::cerr << "Note:\n    Should only have */+/- after \"reg + reg\" or end this address.";
+                            exit(-1);
+                        }
+                    }
+                    else {
+                        errLine(peek().value());
+                        std::cerr << "When: parsing\n  Error:\n    ";
+                        std::cerr << "Invalid Memory Address (No Token After)\a\n  ";
+                        std::cerr << "Note:\n    No Token after \"reg + reg\".";
+                        exit(-1);
+                    }
+                }
+                // 为数值
+                else if (getValueType(v2) == IMM) {
+                    // reg + imm (完整!)
+                    memAddr.append(" + ");
+                    memAddr.append(valueToStr(v2));
+
+                    return memAddr;
+                }
+                // 不是数值/寄存器
+                else {
+                    errLine(peek(getPeekOffset()).value());
+                    std::cerr << "When: parsing\n  Error:\n    ";
+                    std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                    std::cerr << "Note:\n    Should only have a number/register after \"reg +\".";
+                    exit(-1);
+                }
+            }
+            // -
+            else if (peek().value().type == TokenType::sub) {
+                m_index++;
+
+                Value v2 = parseValue();
+
+                // 为数值
+                if (getValueType(v2) == IMM) {
+                    // reg - imm (完整!)
+                    memAddr.append(" - ");
+                    memAddr.append(valueToStr(v2));
+
+                    return memAddr;
+                }
+                // 不是数值
+                else {
+                    errLine(peek(getPeekOffset()).value());
+                    std::cerr << "When: parsing\n  Error:\n    ";
+                    std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+                    std::cerr << "Note:\n    Should only have a number after \"reg -\".";
+                    exit(-1);
+                }
+            }
+            // ]
+            else if (peek().value().type == TokenType::right_bracket) {
+                // reg (完整!)
+                return memAddr;
+            }
+            // 其它
             else {
-                errLine(peek(getPeekOffset()).value());
+                errLine(peek().value());
                 std::cerr << "When: parsing\n  Error:\n    ";
-                std::cerr << "无效的寻址括号!!!\n在\"reg +/-\"后出现未知内容\a\n";
+                std::cerr << "Invalid Memory Address (Unknown Token)\a\n  ";
+                std::cerr << "Note:\n    Should only have */+/- after \"reg\" or end this address.";
                 exit(-1);
             }
         }
-    }
-    else if (peekAndCheck(0, TokenType::imm)) {
-        //imm
-        ab.displacement = consume().value.value();
-        ab.isNumber = true;
-        if (!peekAndCheck(0, TokenType::right_bracket)) {
-            errLine(peek(getPeekOffset()).value());
+        else {
+            errLine(peek().value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "无效的寻址括号!!!\n\"imm\"已经是完整格式\a\n";
+            std::cerr << "Invalid Memory Address (No Token After)\a\n  ";
+            std::cerr << "Note:\n    No Token after \"reg\".";
             exit(-1);
         }
     }
+    // 为数值
+    if (getValueType(v1) == IMM) {
+        // imm (完整!)
+        memAddr.append("abs ");
+        memAddr.append(valueToStr(v1));
+
+        return memAddr;
+    }
+    // 不是数值/寄存器
     else {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "无效的寻址括号!!!\n在'['后出现未知内容\a\n";
+        std::cerr << "Invalid Memory Address (Wrong Value Type)\a\n  ";
+        std::cerr << "Note:\n    Memory Address should always start with a number/register.";
         exit(-1);
     }
 
-    return ab;
+    return memAddr;
 }
 
 // 解析值
@@ -846,7 +1105,7 @@ Value Parser::parseValue() {
         //  消耗[
         m_index++;
         value.type = ValueType::MEM;
-        value.mem = parseIRIaddr();
+        value.mem = parseMemAddr();
 
         //  检查并消耗]
         if (!peekAndCheck(0, TokenType::right_bracket)) {
@@ -875,14 +1134,41 @@ Value Parser::parseValue() {
 // 获取值类型(去除变量类型)
 inline ValueType Parser::getValueType(Value value) const {
     if (value.type == ValueType::VAR) {
-        if (!value.var.qualifier.has_value()) {
+        if (value.var.qualifier.type == VarQualifierType::NONE) {
             return value.var.loc.isReg ? ValueType::REG : ValueType::MEM;
         }
-        else if (value.var.qualifier.value().type == VarQualifierType::NSC) {
+        else if (value.var.qualifier.type == VarQualifierType::NSC) {
             return ValueType::IMM;
         }
     }
     return value.type;
+}
+
+// 值转字符串(获取值内容)
+inline std::string Parser::valueToStr(Value value) const {
+    switch (value.type) {
+        case REG:
+            return value.reg.name;
+            break;
+        case MEM:
+            return value.mem;
+            break;
+        case IMM:
+            return value.imm;
+            break;
+        case VAR:
+            if (value.var.qualifier.type == VarQualifierType::NSC) {
+                return value.var.qualifier.imm;
+            }
+
+            if (value.var.loc.isReg) {
+                return value.var.loc.reg.name;
+            }
+            else {
+                return value.var.loc.memAddr;
+            }
+    }
+    return "";
 }
 
 // 获取预览偏移, 与errLine配合使用

@@ -91,7 +91,7 @@ std::vector<Token> Tokenizer::tokenize() {
         else {
             std::cerr << "At line:" << lineIndex << "\n  ";
             std::cerr << "When: tokenizing\n  Error:\n    ";
-            std::cerr << "Unexpected token\a\n";
+            std::cerr << "Unexpected Token\a\n";
             exit(-1);
         }
     }

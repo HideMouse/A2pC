@@ -145,6 +145,7 @@ const std::unordered_map<std::string, Register> RegMap = {
     {"ss",   {"ss",   1, true, true}},
 };
 
+// JumpType集
 const std::unordered_set<std::string> JumpTypeSet = {
     "z",      // 0
     "nz",     // 非0
@@ -154,14 +155,6 @@ const std::unordered_set<std::string> JumpTypeSet = {
     "no",     // 未溢出
     "c",      // 进位
     "nc",     // 无进位
-};
-
-struct IRIaddr {
-    std::string base;
-    std::string index;
-    std::string scale;
-    std::string displacement;
-    bool isNumber = false;
 };
 
 // 变量修饰类型
@@ -193,7 +186,7 @@ struct VarLoc {
 struct Var {
     uint8 size;
     std::string name;
-    std::optional<VarQualifier> qualifier;
+    VarQualifier qualifier;
     VarLoc loc;
 };
 
@@ -210,7 +203,7 @@ struct Value {
     ValueType type;
     Var var;
     Register reg;
-    IRIaddr mem;
+    std::string mem;
     std::string imm;
 };
 
@@ -319,10 +312,11 @@ class Parser {
         Token consume();
 
         Register parseRegister();
-        IRIaddr parseIRIaddr();
+        std::string parseMemAddr();
         Value parseValue();
 
         inline ValueType getValueType(Value value) const;
+        inline std::string valueToStr(Value value) const;
         inline int32 getPeekOffset() const;
 
     private:

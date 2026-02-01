@@ -23,7 +23,7 @@ const std::unordered_map<std::string, ArgType> ArgMap = {
     // 列出全部选项
     {"--help",     ArgType::HELP},
     {"-help",      ArgType::HELP},
-    {"--h",         ArgType::HELP},
+    {"--h",        ArgType::HELP},
     {"-h",         ArgType::HELP},
 
     // 输出版本信息
@@ -31,6 +31,8 @@ const std::unordered_map<std::string, ArgType> ArgMap = {
     {"-version",   ArgType::VERSION},
     {"--v",        ArgType::VERSION},
     {"-v",         ArgType::VERSION},
+
+    // 控制输出文件
     {"-o",         ArgType::OUPUT_FILE},
 };
 

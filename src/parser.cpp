@@ -49,7 +49,7 @@ std::unique_ptr<Program> Parser::parse() {
         else {
             errLine(peek().value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Invalid Token\a\n";
+            std::cerr << "Invalid Token (No statement starting with this Token)\a\n";
             exit(-1);
         }
     }
@@ -66,7 +66,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     if (getValueType(lV) == IMM) {
         errLine(peek(getPeekOffset() - 1).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid left value\a\n  ";
+        std::cerr << "Invalid Left Value (Wrong Value Type)\a\n  ";
         std::cerr << "Note:\n    It cannot be a number";
         exit(-1);
     }
@@ -90,7 +90,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
     if (!AssiMap.contains(assiStr)) {
         errLine(m_tokens.at(m_index - 1));
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid assignment type: \"" << assiStr << "\"\a\n  ";
+        std::cerr << "Invalid Assignment Type (\"" << assiStr << "\")\a\n  ";
         std::cerr << "Note:\n    Assignment type can be: = / += / -= / ++ / -- / &= / |= / ^= / <<= / >>=";
         exit(-1);
     }
@@ -104,7 +104,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
         if (!peekAndCheck(0, TokenType::semicolon)) {
             errLine(peek(getPeekOffset()).value());
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "++/-- no need right value\a\n  ";
+            std::cerr << "Invalid Right Value (++/-- no need right value)\a\n  ";
             std::cerr << "Note:\n    ++/-- use implicit right value";
             exit(-1);
         }
@@ -121,7 +121,7 @@ std::unique_ptr<StmtAssi> Parser::parseStmtAssi() {
             if (!peek().has_value() || !(peek().value().type < 4)) {
                 errLine(peek(getPeekOffset()).value());
                 std::cerr << "When: parsing\n  Error:\n    ";
-                std::cerr << "Missing an address size inside the parentheses\a\n";
+                std::cerr << "Missing an address size inside the \"()\"\a\n";
                 exit(-1);
             }
             size = peek().value().type;
@@ -270,7 +270,7 @@ std::unique_ptr<StmtTest> Parser::parseStmtTest() {
     if (getValueType(right) == MEM) {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid right operand\a\n  ";
+        std::cerr << "Invalid Right Operand (Wrong Value Type)\a\n  ";
         std::cerr << "Note:\n    It cannot be a memory address";
         exit(-1);
     }
@@ -459,7 +459,7 @@ std::unique_ptr<StmtVarDef> Parser::parseStmtVarDef() {
     else {
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid store location for the variable " << var.name << "\a\n";
+        std::cerr << "Invalid location for the variable " << var.name << "\a\n";
         exit(-1);
     }
     
@@ -1084,7 +1084,8 @@ Value Parser::parseValue() {
         if (!VarMap.contains(varName)) {
             errLine(m_tokens.at(m_index));
             std::cerr << "When: parsing\n  Error:\n    ";
-            std::cerr << "Variable " << varName << " is not defined\a\n";
+            std::cerr << "Invalid Value (Undefined Variable)\a\n  ";
+            std::cerr << "Note:\n    " << varName << " is not defined.";
             exit(-1);
         }
         m_index++;
@@ -1122,9 +1123,10 @@ Value Parser::parseValue() {
         value.imm = consume().value.value();
     }
     else {
+        // 无效
         errLine(peek(getPeekOffset()).value());
         std::cerr << "When: parsing\n  Error:\n    ";
-        std::cerr << "Invalid Value\a\n";
+        std::cerr << "Invalid Value (Invalid TokenType)\n";
         exit(-1);
     }
 

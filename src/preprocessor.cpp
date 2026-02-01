@@ -53,7 +53,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                         if (!bitsTypeSet.contains(bits)) {
                             std::cerr << "At line:" << lineIndex << "\n  ";
                             std::cerr << "When: preprocessing\n  Error:\n    ";
-                            std::cerr << "Unknown bit width \"" << bits << "\" or missing this argument\a\n  ";
+                            std::cerr << "Invalid Proprocessor Command (" << (bits.empty() ? "Missing a bit width" : "Invalid bit width") << ")\a\n  ";
                             std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
                             exit(-1);
                         }
@@ -62,7 +62,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                         if (line.find_last_not_of(" \0") != std::string::npos) {
                             std::cerr << "At line:" << lineIndex << "\n  ";
                             std::cerr << "When: preprocessing\n  Error:\n    ";
-                            std::cerr << "Wrong number of arguments\a\n  ";
+                            std::cerr << "Invalid Proprocessor Command (Wrong number of arguments)\a\n  ";
                             std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
                             exit(-1);
                         }
@@ -73,7 +73,7 @@ PreprocessingInfo Preprocessor::preprocess() {
             else {
                 std::cerr << "At line:" << lineIndex << "\n  ";
                 std::cerr << "When: preprocessing\n  Error:\n    ";
-                std::cerr << "Unknown preprocess command \"" << firstArg << "\"\a\n";
+                std::cerr << "Unknown preprocess command (\"" << firstArg << "\")\a\n";
                 exit(-1);
             }
             line.clear();

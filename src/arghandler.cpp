@@ -43,7 +43,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 std::cout << "  -o <file>   Write output code to <file> (defaults to out.asm)\n";
                 std::cout << "\n";
                 std::cout << "For more information, please see:\n";
-                std::cout << "  <https://github.com/HideMouse>.\n";
+                std::cout << "  <https://github.com/HideMouse/A2pC>.\n";
                 exit(0);
                 break;
             case ArgType::VERSION:

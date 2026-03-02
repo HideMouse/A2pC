@@ -1,0 +1,11 @@
+section .text;
+
+extern ExitProcess;
+
+global main:
+    reg::rsp -= 40;
+
+    reg::rcx = 10;
+    asm @
+        call ExitProcess
+    @;

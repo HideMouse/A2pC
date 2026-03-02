@@ -28,8 +28,27 @@ int main(int argc, char* argv[]) {
 
     // 预处理器
     Preprocessor preprocessor(std::move(src_codes));
-    PreprocessingInfo info = preprocessor.preprocess();
+    preprocessor.preprocess();
     std::string preprocessedSrc = preprocessor.getPreprocessedSrc();
+
+    //  仅预处理时
+    if (result.isOnlyPreprocess) {
+        if (result.outputFile.empty()) {
+            std::cout << preprocessedSrc;
+        }
+        else {
+            std::fstream output(result.outputFile, std::ios::out);
+            if (!output.is_open()) {
+                std::cerr << "When: main processing\nError:\n  ";
+                std::cerr << "Cannot open output file\a\n";
+                std::cerr << "Note:\n  Path may be invalid or A2pC has no access permission.";
+                return -1;
+            }
+            output << preprocessedSrc;
+        }
+
+        return 0;
+    }
 
     // 分词器
     Tokenizer tokenizer(std::move(preprocessedSrc));
@@ -41,7 +60,7 @@ int main(int argc, char* argv[]) {
     ParseInfo pInfo = parser.getParseInfo();
 
     // 生成器
-    Generator generator(program, info, pInfo);
+    Generator generator(program, pInfo);
     {
         std::fstream output(result.outputFile, std::ios::out);
         if (!output.is_open()) {
@@ -58,4 +77,6 @@ int main(int argc, char* argv[]) {
     // command << "nasm -f win64 " << result.outputFile << " -o out.obj";
     // system(command.str().c_str());
     // system("gcc out.obj -o out.exe");
+
+    return 0;
 }

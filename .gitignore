@@ -7,12 +7,12 @@
 # 文件夹
 .vscode/
 build/
-example/
+# example/ (示例代码限时回归)
 history/
 test/
 
-# A++源代码
-*.a2p
+# A++源代码 (示例代码限时回归)
+test.a2p
 
-# 编译脚本(限时回归)
+# 编译脚本 (限时回归)
 # *.bat

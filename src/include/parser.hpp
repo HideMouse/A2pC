@@ -277,6 +277,30 @@ struct StmtSectionDef : public ASTNode {
         : sectionName(name) {}
 };
 
+// 函数返回语句
+struct StmtRetN : public ASTNode {
+    std::string N;
+
+    StmtRetN(const std::string& n)
+        : N(n) {}
+};
+
+// 中断语句
+struct StmtIntN : public ASTNode {
+    std::string N;
+
+    StmtIntN(const std::string& n)
+        : N(n) {}
+};
+
+// 位宽语句
+struct StmtBits : public ASTNode {
+    std::string bits;
+
+    StmtBits(const std::string& bit)
+        : bits(bit) {}
+};
+
 // 程序根节点
 struct Program : public ASTNode {
     std::vector<std::unique_ptr<ASTNode>> statements;
@@ -303,6 +327,9 @@ class Parser {
         std::unique_ptr<StmtVarDef> parseStmtVarDef();
         std::unique_ptr<StmtInlineAsm> parseStmtInlineAsm();
         std::unique_ptr<StmtSectionDef> parseStmtSectionDef();
+        std::unique_ptr<StmtRetN> parseStmtRetN();
+        std::unique_ptr<StmtIntN> parseStmtIntN();
+        std::unique_ptr<StmtBits> parseStmtBits();
         
         void parseExtern();
 

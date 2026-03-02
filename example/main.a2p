@@ -1,0 +1,53 @@
+// 这里也可以有注释喵~
+#define 16 32
+// ^ 将16替换为32喵~
+
+BITS 64; // BITS也不再是预处理指令了喵~
+extern Exit, Open; // extern不再是预处理指令了喵~
+
+// 支持变量声明了喵~
+uint64 Rax(reg::rax) = 0x10000;
+uint64 Rbx(reg::rbx); // 只声明不赋值也可以喵~
+uint32 MyVar3(0x2000) = 0x10000; // 未使用, 所以定义不会被生成喵~
+uint64 Rcx(reg::rcx);
+qword  nsc::Three = 3; // 不储存的常量喵~
+dword  nsc::Two = 2;
+uint8  nsc::Eight = 8;
+
+// 独占一行的注释喵~
+Rax ^= Rax; // 行中的注释喵~
+Rbx ^= Rbx;
+Rcx = 0x100;
+
+[0x1000] = Two;  // 类型也会被使用的喵~
+[0x3000] = Three;
+
+// 内部还有//的注释喵~
+// 内部有\的注释喵~
+A:
+    Rax += Three; // 直接展开喵~
+    Rbx += Two;
+    Rcx -= 1;
+    test(Rcx, Rcx, nz) to A; // test指令里也可以是变量喵~
+
+// 内联汇编喵~
+asm @
+    mov rdx, 100 // 这里也可以有注释喵~
+    sub rdx, 10 ;注释也可以用喵~
+    push rdx ;注释会被加到最终生成的汇编中喵~
+@;
+
+// 内存寻址里也可以是变量喵~
+[Rbx + Rax * Eight - 16] = (uint64) 0xFFFF; // C++风格变量类型喵~
+
+// 直接缩在一行里也可以喵~
+asm @pop rdx@;
+
+// 全局标号喵~
+global Func1:
+    intn Three; // 中断语句也使用Value了喵~
+    intn 8;     // 直接写数字也可以喵~
+
+    retn;       // 返回语句不写值也可以喵~
+
+//这里也可以有注释喵~

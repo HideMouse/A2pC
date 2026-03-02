@@ -46,6 +46,15 @@ std::unique_ptr<Program> Parser::parse() {
         else if (peek().value().type == TokenType::ilasm) {
             program.get()->statements.push_back(parseStmtInlineAsm());
         }
+        else if (peek().value().type == TokenType::retn) {
+            program.get()->statements.push_back(parseStmtRetN());
+        }
+        else if (peek().value().type == TokenType::intn) {
+            program.get()->statements.push_back(parseStmtIntN());
+        }
+        else if (peek().value().type == TokenType::bits) {
+            program.get()->statements.push_back(parseStmtBits());
+        }
         else {
             errLine(peek().value());
             std::cerr << "When: parsing\n  Error:\n    ";
@@ -580,6 +589,115 @@ std::unique_ptr<StmtSectionDef> Parser::parseStmtSectionDef() {
     m_index++;
 
     return std::make_unique<StmtSectionDef>(name);
+}
+
+std::unique_ptr<StmtRetN> Parser::parseStmtRetN() {
+    //消耗retn
+    m_index++;
+
+    //判断为ret还是ret imm16
+    if (peekAndCheck(0, TokenType::semicolon)) {
+        //存在; -> ret
+
+        // 消耗分号
+        m_index++;
+
+        return std::make_unique<StmtRetN>("0");
+    }
+    else {
+        //不存在; -> ret imm16
+
+        // 解析N
+        Value N = parseValue();
+
+        // 检查N的类型
+        if (getValueType(N) != IMM) {
+            // 不是数值
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "When: parsing\n  Error:\n    ";
+            std::cerr << "Wrong ValueType\a\n  ";
+            std::cerr << "Note:\n    Only has \"ret\" and \"ret imm16\" in Asm.";
+            exit(-1);
+        }
+
+        // 分号
+        if (!peekAndCheck(0, TokenType::semicolon)) {
+            errLine(peek(getPeekOffset()).value());
+            std::cerr << "When: parsing\n  Error:\n    ";
+            std::cerr << "Missing a ';'\a\n";
+            exit(-1);
+        }
+        m_index++;
+
+        return std::make_unique<StmtRetN>(valueToStr(N));
+    }
+}
+
+std::unique_ptr<StmtIntN> Parser::parseStmtIntN() {
+    //消耗intn
+    m_index++;
+
+    //解析N
+    Value N = parseValue();
+
+    //检查N的类型
+    if (getValueType(N) != IMM) {
+        // 不是数值
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "When: parsing\n  Error:\n    ";
+        std::cerr << "Wrong ValueType\a\n  ";
+        std::cerr << "Note:\n    Only has \"int imm8\" in Asm.";
+        exit(-1);
+    }
+
+    //分号
+    if (!peekAndCheck(0, TokenType::semicolon)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "When: parsing\n  Error:\n    ";
+        std::cerr << "Missing a ';'\a\n";
+        exit(-1);
+    }
+    m_index++;
+
+    return std::make_unique<StmtIntN>(valueToStr(N));
+}
+
+std::unique_ptr<StmtBits> Parser::parseStmtBits() {
+    //消耗bits/BITS
+    m_index++;
+
+    //位宽
+    std::string bits;
+
+    //解析位宽
+    if (!peekAndCheck(0, TokenType::imm)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "When: parsing\n  Error:\n    ";
+        std::cerr << "Missing a bit width\a\n";
+        exit(-1);
+    }
+    bits = consume().value.value();
+    if (bits != "16" &&
+        bits != "32" &&
+        bits != "64"
+    ) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "When: parsing\n  Error:\n    ";
+        std::cerr << "Wrong bit width\a\n  ";
+        std::cerr << "Note:\n    Bit width only can be 16, 32 or 64";
+        exit(-1);
+    }
+
+    //分号
+    if (!peekAndCheck(0, TokenType::semicolon)) {
+        errLine(peek(getPeekOffset()).value());
+        std::cerr << "When: parsing\n  Error:\n    ";
+        std::cerr << "Missing a ';'\a\n";
+        exit(-1);
+    }
+    m_index++;
+
+    return std::make_unique<StmtBits>(bits);
 }
 
 void Parser::parseExtern() {

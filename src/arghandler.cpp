@@ -7,6 +7,8 @@ bool inline isFileExists(const std::string& path) {
 
 ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
     ArgHandleResult result;
+    result.isOnlyPreprocess = false;
+
     std::optional<std::string> srcFile;
     std::optional<std::string> outFile;
     
@@ -41,6 +43,7 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                 std::cout << "  --version   Display A2pC version information (also -version/--v/-v)\n";
                 std::cout << "  <file>      Read source code from <file>\n";
                 std::cout << "  -o <file>   Write output code to <file> (defaults to out.asm)\n";
+                std::cout << "  -E          Preprocess only\n";
                 std::cout << "\n";
                 std::cout << "For more information, please see:\n";
                 std::cout << "  <https://github.com/HideMouse/A2pC>.\n";
@@ -74,6 +77,9 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
                     exit(-1);
                 }
                 break;
+            case ArgType::ONLY_PREPROCESS:
+                result.isOnlyPreprocess = true;
+                break;
         }
     }
 
@@ -85,7 +91,9 @@ ArgHandleResult ArgHandler::handleArgs(int argc, char* argv[]) {
     result.srcFile = srcFile.value();
 
     if (!outFile.has_value()) {
-        result.outputFile = "out.asm";
+        if (!result.isOnlyPreprocess) {
+            result.outputFile = "out.asm";
+        }
     }
     else {
         result.outputFile = outFile.value();

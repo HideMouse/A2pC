@@ -3,12 +3,9 @@
 std::string Generator::generate() const {
     std::stringstream output;
 
-    // 添加位宽标识
-    output << "bits " << m_info.bits << "\n";
-
     // 添加全局标签标识
     if (!global_funcs.empty()) {
-        output << "\nglobal " << global_funcs[0];
+        output << "global " << global_funcs[0];
         for (uint32 i = 1; i < global_funcs.size(); i++) {
             output << ", " << global_funcs[i];
         }
@@ -168,6 +165,19 @@ std::string Generator::generate() const {
         }
         else if (auto assign = dynamic_cast<StmtSectionDef*>(stat.get())) {
             output << "section " << assign->sectionName << "\n";
+        }
+        else if (auto assign = dynamic_cast<StmtRetN*>(stat.get())) {
+            output << "ret";
+            if (assign->N.compare("0") != 0) {
+                output << " " << assign->N;
+            }
+            output << "\n";
+        }
+        else if (auto assign = dynamic_cast<StmtIntN*>(stat.get())) {
+            output << "int " << assign->N << "\n";
+        }
+        else if (auto assign = dynamic_cast<StmtBits*>(stat.get())) {
+            output << "bits " << assign->bits << "\n";
         }
     }
     

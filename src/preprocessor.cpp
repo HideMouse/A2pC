@@ -18,11 +18,7 @@ Preprocessor::Preprocessor(std::string src) {
 }
 
 // 预处理
-PreprocessingInfo Preprocessor::preprocess() {
-    PreprocessingInfo info = {
-        .bits = "64"
-    };
-
+void Preprocessor::preprocess() {
     uint32 lineIndex = 1;
     for (std::string& line : m_lines) {
         // 删除行首换行
@@ -48,24 +44,22 @@ PreprocessingInfo Preprocessor::preprocess() {
                 clearSpace(line);
 
                 switch (firstArgMap.at(firstArg)) {
-                    case BITS: {
-                        std::string bits = line.substr(0, line.find_first_of(" \0"));
-                        if (!bitsTypeSet.contains(bits)) {
+                    case DEFINE: {
+                        if (line.find_first_of(" ") == std::string::npos) {
                             std::cerr << "At line:" << lineIndex << "\n  ";
                             std::cerr << "When: preprocessing\n  Error:\n    ";
-                            std::cerr << "Invalid Proprocessor Command (" << (bits.empty() ? "Missing a bit width" : "Invalid bit width") << ")\a\n  ";
-                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
+                            std::cerr << "Missing a Macro Body\a\n  ";
                             exit(-1);
                         }
-                        info.bits = bits;
-                        line.erase(0, bits.size());
-                        if (line.find_last_not_of(" \0") != std::string::npos) {
-                            std::cerr << "At line:" << lineIndex << "\n  ";
-                            std::cerr << "When: preprocessing\n  Error:\n    ";
-                            std::cerr << "Invalid Proprocessor Command (Wrong number of arguments)\a\n  ";
-                            std::cerr << "Note:\n    #BITS takes only one argument for bit width, it must be 16, 32, or 64.";
-                            exit(-1);
-                        }
+                        std::string macroName = line.substr(0, line.find_first_of(" "));
+                        
+                        line.erase(0, macroName.size());
+                        clearSpace(line);
+
+                        std::string macroBody = line;
+                        
+                        applyDefineMacro(lineIndex, macroName, macroBody);
+                        
                         break;
                     }
                 }
@@ -76,6 +70,7 @@ PreprocessingInfo Preprocessor::preprocess() {
                 std::cerr << "Unknown preprocess command (\"" << firstArg << "\")\a\n";
                 exit(-1);
             }
+
             line.clear();
         }
         
@@ -85,8 +80,6 @@ PreprocessingInfo Preprocessor::preprocess() {
 
     // 删除空行
     // m_lines.erase(std::remove(m_lines.begin(), m_lines.end(), ""), m_lines.end());
-
-    return info;
 }
 
 std::string Preprocessor::getPreprocessedSrc() {
@@ -104,4 +97,19 @@ void clearSpace(std::string& str) {
         i++;
     }
     str.erase(0, i);
+}
+
+void Preprocessor::applyDefineMacro(uint32 lineIndex, const std::string& macroName, const std::string& macroBody) {
+    uint32 lI = 0;
+    for (std::string& line : m_lines) {
+        lI++;
+        
+        if (lI <= lineIndex) {
+            continue;
+        }
+
+        while (line.find(macroName) != std::string::npos) {
+            line.replace(line.find(macroName), macroBody.size(), macroBody);
+        }
+    }
 }

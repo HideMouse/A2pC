@@ -13,8 +13,8 @@ enum class FormatType {
 
 class Generator {
     public:
-        Generator(std::unique_ptr<Program>& root, const PreprocessingInfo& info, const ParseInfo& pInfo)
-            : m_root(std::move(root)), m_info(std::move(info)) {
+        Generator(std::unique_ptr<Program>& root, const ParseInfo& pInfo)
+            : m_root(std::move(root)) {
             global_funcs = m_root->global_funcs;
             extern_funcs = m_root->extern_funcs;
 
@@ -30,7 +30,6 @@ class Generator {
 
     private:
         const std::unique_ptr<Program> m_root;
-        PreprocessingInfo m_info;
         
         std::vector<std::string> global_funcs;
         std::vector<std::string> extern_funcs;

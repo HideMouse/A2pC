@@ -33,6 +33,10 @@ enum TokenType {
     extern_,              //extern标志
     section,              //段
     ilasm,                //内联汇编
+    retn,                 //返回
+    intn,                 //中断
+    bits,                 //定义位宽
+    
     assembly,             //汇编内容
 
     semicolon,            //;
@@ -68,15 +72,10 @@ const std::unordered_map<std::string, TokenType> tokenMap = {
     {"dword",   TokenType::dword},
     {"qword",   TokenType::qword},
     // C++风格:
-    {"uint8",    TokenType::byte},
-    {"uint16",    TokenType::word},
-    {"uint32",   TokenType::dword},
-    {"uint64",   TokenType::qword},
-    // Rust风格:
-    {"u8",    TokenType::byte},
-    {"u16",    TokenType::word},
-    {"u32",   TokenType::dword},
-    {"u64",   TokenType::qword},
+    {"uint8",   TokenType::byte},
+    {"uint16",  TokenType::word},
+    {"uint32",  TokenType::dword},
+    {"uint64",  TokenType::qword},
 
     {"reg",     TokenType::reg},
     {"nsc",     TokenType::nsc},
@@ -89,6 +88,10 @@ const std::unordered_map<std::string, TokenType> tokenMap = {
     {"extern",  TokenType::extern_},
     {"section", TokenType::section},
     {"asm",     TokenType::ilasm},
+    {"retn",    TokenType::retn},
+    {"intn",    TokenType::intn},
+    {"bits",    TokenType::bits},
+    {"BITS",    TokenType::bits},
 
     {";",       TokenType::semicolon},
     {"(",       TokenType::left_paren},

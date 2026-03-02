@@ -9,13 +9,11 @@
 #include <algorithm>
 
 enum FirstArgType {
-    BITS,          // 位宽
-    EXTERN,        // 包含列表
+    DEFINE,        // 宏
 };
 
 const std::unordered_map<std::string, FirstArgType> firstArgMap = {
-    {"bits",     FirstArgType::BITS},
-    {"BITS",     FirstArgType::BITS},
+    {"define",   FirstArgType::DEFINE},
 };
 
 // 位宽类型无序表
@@ -25,17 +23,16 @@ const std::unordered_set<std::string> bitsTypeSet = {
     "64"
 };
 
-struct PreprocessingInfo {
-    std::string bits;
-};
-
 class Preprocessor {
     public:
         Preprocessor(std::string src);
 
-        PreprocessingInfo preprocess();
+        void preprocess();
 
         std::string getPreprocessedSrc();
+
+    private:
+        void applyDefineMacro(uint32 lineIndex, const std::string& macroName, const std::string& macroBody);
 
     private:
         std::vector<std::string> m_lines;

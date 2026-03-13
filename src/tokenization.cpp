@@ -3,8 +3,13 @@
 bool isNumberChar(char c);
 bool isIdentFirstChar(char c);
 bool isIdentChar(char c);
+
+void clearZero(std::string& num);
+
+// 数字处理:
+NumType getNumberType(const std::string& num);
 bool isAvailableNumber(const std::string& num);
-void numberErrorNote(const std::string& num);
+std::optional<uint64> numStrToInt(const std::string& num);
 
 //public:
 
@@ -29,29 +34,36 @@ std::vector<Token> Tokenizer::tokenize() {
 
             if (tokenMap.contains(buffer)) {
                 tokens.push_back({ .type = tokenMap.at(buffer), .lineIndex = lineIndex });
-                buffer.clear();
-                continue;
             }
             else {
                 tokens.push_back({ .type = TokenType::ident, .value = buffer, .lineIndex = lineIndex });
-                buffer.clear();
-                continue;
             }
+
+            buffer.clear();
+            continue;
         }
         else if (std::isdigit(peek().value())) {
             while (peek().has_value() && isNumberChar(peek().value())) {
                 buffer.push_back(consume());
             }
 
+            // 不是有效数字
             if (!isAvailableNumber(buffer)) {
                 std::cerr << "At line:" << lineIndex << "\n  ";
                 std::cerr << "When: tokenizing\n  Error:\n    \"";
                 std::cerr << buffer << "\" is not a number\a\n";
-                numberErrorNote(buffer);
+                exit(-1);
+            }
+            // 对uint64溢出
+            if (!numStrToInt(buffer).has_value()) {
+                std::cerr << "At line:" << lineIndex << "\n  ";
+                std::cerr << "When: tokenizing\n  Error:\n    \"";
+                std::cerr << buffer << "\" is overflow qword (Number Too Big)\a\n";
                 exit(-1);
             }
 
             tokens.push_back({ .type = TokenType::imm, .value = buffer, .lineIndex = lineIndex });
+            
             buffer.clear();
             continue;
         }
@@ -77,6 +89,7 @@ std::vector<Token> Tokenizer::tokenize() {
 
             tokens.push_back({ .type = TokenType::assembly, .value = buffer.substr(1, buffer.size() - 1), .lineIndex = lineIndex });
             buffer.clear();
+            
             continue;
         }
         else if (tokenMap.contains(std::string(1, peek().value()))) {
@@ -142,15 +155,32 @@ bool isIdentChar(char c) {
             c == '_';
 }
 
+// 删除0
+void clearZero(std::string& num) {
+    if (num.find_first_not_of("0\0") == std::string::npos) {
+        num.erase(0, num.size() - 1);
+        return;
+    }
+
+    uint32 i = 0;
+    while (num[i] == '0') {
+        i++;
+    }
+    num.erase(0, i);
+}
+
+// 获取数字类型
+NumType getNumberType(const std::string& num) {
+    if (num.find("0x") == 0)                               return HEXwith0x;
+    else if (num.find_first_of("Hh") == (num.size() - 1))  return HEXwithH;
+    else if (num.find("0b") == 0)                          return BINwith0b;
+    else if (num.find_first_of("Bb") == (num.size() - 1))  return BINwithB;
+    else                                                   return DECwithNone;
+}
+
 // 是否为可用数字
 bool isAvailableNumber(const std::string& num) {
-    NumType type;
-    
-    if (num.find("0x") == 0)                               type = HEXwith0x;
-    else if (num.find_first_of("Hh") == (num.size() - 1))  type = HEXwithH;
-    else if (num.find("0b") == 0)                          type = BINwith0b;
-    else if (num.find_first_of("Bb") == (num.size() - 1))  type = BINwithB;
-    else                                                   type = DECwithNone;
+    NumType type = getNumberType(num);
     
     switch (type) {
         case HEXwith0x:
@@ -188,14 +218,83 @@ bool isAvailableNumber(const std::string& num) {
     return true;
 }
 
-// 数字报错
-void numberErrorNote(const std::string& num) {
-    // 拥有16进制专属字符
-    if (num.find_first_of("abcdefABCDEF") != std::string::npos) {
-        // 但没有16进制前后缀
-        if (num.find_first_of("Hhx") == std::string::npos) {
-            std::cerr << "  Note:\n    It seems to be \"0x" << num << "\" or \"" << num << "H\"\n";
-            return;
+// 数字字符串转十进整数
+std::optional<uint64> numStrToInt(const std::string& num) {
+    NumType type = getNumberType(num);
+
+    // 去除后缀后的数字字符串
+    std::string nonFixNum;
+
+    // 整数值
+    uint64 intV = 0;
+    
+    switch (type) {
+        case HEXwith0x: {
+            nonFixNum = num.substr(2, num.size() - 2);
+            clearZero(nonFixNum);
+
+            if (nonFixNum.size() > 16) {
+                return std::nullopt;
+            }
+
+            intV = std::stoull(nonFixNum, nullptr, 16);
+
+            break;
+        }
+        case HEXwithH: {
+            nonFixNum = num.substr(0, num.size() - 1);
+            clearZero(nonFixNum);
+
+            if (nonFixNum.size() > 16) {
+                return std::nullopt;
+            }
+
+            intV = std::stoull(nonFixNum, nullptr, 16);
+
+            break;
+        }
+        case BINwith0b: {
+            nonFixNum = num.substr(2, num.size() - 2);
+            clearZero(nonFixNum);
+            
+            if (nonFixNum.size() > 64) {
+                return std::nullopt;
+            }
+
+            intV = std::stoull(nonFixNum, nullptr, 2);
+
+            break;
+        }
+        case BINwithB: {
+            nonFixNum = num.substr(0, num.size() - 1);
+            clearZero(nonFixNum);
+            
+            if (nonFixNum.size() > 64) {
+                return std::nullopt;
+            }
+
+            intV = std::stoull(nonFixNum, nullptr, 2);
+
+            break;
+        }
+        case DECwithNone: {
+            nonFixNum = num;
+            clearZero(nonFixNum);
+
+            if (nonFixNum.size() > 20) {
+                return std::nullopt;
+            }
+            else if (nonFixNum.size() == 20 &&
+                     nonFixNum.compare("18446744073709551615") > 0
+            ) {
+                return std::nullopt;
+            }
+
+            intV = std::stoull(nonFixNum, nullptr, 10);
+
+            break;
         }
     }
+
+    return intV;
 }

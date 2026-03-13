@@ -1,6 +1,7 @@
 #include "preprocessor.hpp"
 
-void clearSpace(std::string& str);
+void clearFrontSpace(std::string& str);
+void clearBackSpace(std::string& str);
 
 // public:
 
@@ -27,7 +28,7 @@ void Preprocessor::preprocess() {
         }
 
         // 删除行首多余空格
-        clearSpace(line);
+        clearFrontSpace(line);
 
         // 删除注释
         size_t commentPos = line.find("//");
@@ -41,7 +42,7 @@ void Preprocessor::preprocess() {
             if (firstArgMap.contains(firstArg)) {
                 // 清除预处理指令与多余空格
                 line.erase(0, firstArg.size() + 1);
-                clearSpace(line);
+                clearFrontSpace(line);
 
                 switch (firstArgMap.at(firstArg)) {
                     case DEFINE: {
@@ -54,11 +55,19 @@ void Preprocessor::preprocess() {
                         std::string macroName = line.substr(0, line.find_first_of(" "));
                         
                         line.erase(0, macroName.size());
-                        clearSpace(line);
+                        clearFrontSpace(line);
+                        clearBackSpace(line);
 
                         std::string macroBody = line;
-                        
-                        applyDefineMacro(lineIndex, macroName, macroBody);
+
+                        if (macroBody.find(macroName) != std::string::npos) {
+                            std::cerr << "At line:" << lineIndex << "\n  ";
+                            std::cerr << "When: preprocessing\n  Warning:\n    ";
+                            std::cerr << "MacroBody contains MacroName\a\n";
+                        }
+                        else {
+                            applyDefineMacro(lineIndex, macroName, macroBody);
+                        }
                         
                         break;
                     }
@@ -91,12 +100,37 @@ std::string Preprocessor::getPreprocessedSrc() {
     return src;
 }
 
-void clearSpace(std::string& str) {
+void clearFrontSpace(std::string& str) {
     uint32 i = 0;
     while (std::isspace(str[i])) {
         i++;
     }
     str.erase(0, i);
+}
+
+void clearBackSpace(std::string& str) {
+    uint32 i = str.find_last_of(" ");
+    if (i == std::string::npos ||
+        i != str.size() - 1
+    ) {
+        //std::cout << "no space!!!\n";
+        return;
+    }
+
+    if (str.find_first_not_of(" \0") == std::string::npos) {
+        //std::cout << "all space!!!\n";
+        str.clear();
+        return;
+    }
+
+    i = str.size();
+    uint32 count = 0;
+
+    while (std::isspace(str[i - 1])) {
+        i--;
+        count++;
+    }
+    str.erase(i, count);
 }
 
 void Preprocessor::applyDefineMacro(uint32 lineIndex, const std::string& macroName, const std::string& macroBody) {
